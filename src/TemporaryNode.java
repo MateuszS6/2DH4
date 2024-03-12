@@ -2,9 +2,9 @@
 // Coursework 2023/2024
 //
 // Submission by
-// YOUR_NAME_GOES_HERE
-// YOUR_STUDENT_ID_NUMBER_GOES_HERE
-// YOUR_EMAIL_GOES_HERE
+// MATEUSZ STEPIEN
+// 220027090
+// Mateusz.Stepien@city.ac.uk
 
 
 // DO NOT EDIT starts
@@ -17,7 +17,6 @@ interface TemporaryNodeInterface {
 
 
 public class TemporaryNode implements TemporaryNodeInterface {
-
     public boolean start(String startingNodeName, String startingNodeAddress) {
 	// Implement this!
 	// Return true if the 2D#4 network can be contacted
