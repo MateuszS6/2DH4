@@ -30,16 +30,18 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
         String[] addressParts = startingNodeAddress.split(":");
         try {
-            clientSocket = new Socket(addressParts[0], Integer.parseInt(addressParts[1]));
+            String ipAddress = addressParts[0];
+            int port = Integer.parseInt(addressParts[1]);
+            clientSocket = new Socket(ipAddress, port);
             reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             writer = new OutputStreamWriter(clientSocket.getOutputStream());
 
-            String startMsg = "START 1" + startingNodeName + "\n";
+            String startMsg = "START 1" + startingNodeName;
             writer.write(startMsg);
             writer.flush();
 
             String rsp = reader.readLine();
-            if (!rsp.contains("START")) {
+            if (!rsp.startsWith("START")) {
                 clientSocket.close();
                 return false;
             }
