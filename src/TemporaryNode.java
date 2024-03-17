@@ -80,6 +80,21 @@ public class TemporaryNode implements TemporaryNodeInterface {
 	    // Implement this!
 	    // Return the string if the get worked
 	    // Return null if it didn't
-        return "Not implemented";
+        String value = null;
+        try {
+
+            long keyLines = key.chars().filter(ch -> ch == '\n').count();
+            String request = "GET? " + keyLines + '\n' + key;
+            writer.write(request);
+            writer.flush();
+
+            String response = reader.readLine();
+            if (response.startsWith("VALUE"))
+                value = response.substring(response.indexOf('\n') + 1);
+
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
+        return value;
     }
 }
