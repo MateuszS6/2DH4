@@ -23,6 +23,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
     private Socket clientSocket;
     private BufferedReader reader;
     private Writer writer;
+
     public boolean start(String startingNodeName, String startingNodeAddress) {
         // Implement this!
         // Return true if the 2D#4 network can be contacted
@@ -41,16 +42,14 @@ public class TemporaryNode implements TemporaryNodeInterface {
             String response = reader.readLine();
             if (!response.startsWith("START")) {
                 clientSocket.close();
-                reader.close();
-                writer.close();
                 return false;
             }
-            return true;
 
         } catch (IOException e) {
             System.err.println(e.getMessage());
             return false;
         }
+        return true;
     }
 
     public boolean store(String key, String value) {
