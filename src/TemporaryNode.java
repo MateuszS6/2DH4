@@ -20,32 +20,33 @@ interface TemporaryNodeInterface {
 
 
 public class TemporaryNode implements TemporaryNodeInterface {
+    private Socket clientSocket;
     private BufferedReader reader;
     private Writer writer;
-    private Socket clientSocket;
     public boolean start(String startingNodeName, String startingNodeAddress) {
         // Implement this!
         // Return true if the 2D#4 network can be contacted
         // Return false if the 2D#4 network can't be contacted
-
-        String[] addressParts = startingNodeAddress.split(":");
         try {
-            String ipAddress = addressParts[0];
-            int port = Integer.parseInt(addressParts[1]);
-            clientSocket = new Socket(ipAddress, port);
+
+            String[] addressParts = startingNodeAddress.split(":");
+            clientSocket = new Socket(addressParts[0], Integer.parseInt(addressParts[1]));
             reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             writer = new OutputStreamWriter(clientSocket.getOutputStream());
 
-            String startMsg = "START 1" + startingNodeName;
-            writer.write(startMsg);
+            String message = "START 1" + startingNodeName;
+            writer.write(message);
             writer.flush();
 
-            String rsp = reader.readLine();
-            if (!rsp.startsWith("START")) {
+            String response = reader.readLine();
+            if (!response.startsWith("START")) {
                 clientSocket.close();
+                reader.close();
+                writer.close();
                 return false;
             }
             return true;
+
         } catch (IOException e) {
             System.err.println(e.getMessage());
             return false;
@@ -56,13 +57,29 @@ public class TemporaryNode implements TemporaryNodeInterface {
 	    // Implement this!
 	    // Return true if the store worked
 	    // Return false if the store failed
-	    return true;
+        try {
+
+            long keyLines = key.chars().filter(ch -> ch == '\n').count();
+            long valLines = value.chars().filter(ch -> ch == '\n').count();
+            String request = "PUT? " + keyLines + ' ' + valLines + '\n'
+                    + key + '\n'
+                    + value;
+            writer.write(request);
+            writer.flush();
+
+            String response = reader.readLine();
+            return response.equals("SUCCESS");
+
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            return false;
+        }
     }
 
     public String get(String key) {
 	    // Implement this!
 	    // Return the string if the get worked
 	    // Return null if it didn't
-	    return "Not implemented";
+        return "Not implemented";
     }
 }
