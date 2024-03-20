@@ -20,28 +20,38 @@ interface TemporaryNodeInterface {
 
 
 public class TemporaryNode implements TemporaryNodeInterface {
-    private Socket clientSocket;
+    private Socket socket;
     private BufferedReader reader;
     private Writer writer;
 
     public boolean start(String startingNodeName, String startingNodeAddress) {
         try {
 
-            // Split the address and initialise the socket, reader, and writer
+            // Split the address and create the serverSocket
             String[] addressParts = startingNodeAddress.split(":");
-            clientSocket = new Socket(addressParts[0], Integer.parseInt(addressParts[1]));
-            reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            writer = new OutputStreamWriter(clientSocket.getOutputStream());
+            String ipAddress = addressParts[0];
+            int portNumber = Integer.parseInt(addressParts[1]);
+            System.out.println("Temp. node connecting to " + ipAddress + ':' + portNumber);
+            socket = new Socket(ipAddress, portNumber);
+
+            // Create the reader and writer
+            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            writer = new OutputStreamWriter(socket.getOutputStream());
 
             // Create and send a START message
             String message = "START 1" + startingNodeName;
+            System.out.println("Sending a START message to the full node");
             writer.write(message);
             writer.flush();
 
             // Receive and check the response
             String response = reader.readLine();
-            if (!response.startsWith("START")) {
-                clientSocket.close();
+            System.out.println("Received from full node: " + response);
+            if (response.equals(message)) {
+                System.out.println("The connection has been started!");
+                return true; // 2D#4 network can be contacted
+            } else {
+                socket.close();
                 return false; // 2D#4 network can't be contacted
             }
 
@@ -49,7 +59,6 @@ public class TemporaryNode implements TemporaryNodeInterface {
             System.err.println(e.getMessage());
             return false;
         }
-        return true; // 2D#4 network can be contacted
     }
 
     public boolean store(String key, String value) {

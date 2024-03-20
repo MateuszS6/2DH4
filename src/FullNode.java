@@ -7,10 +7,9 @@
 // Mateusz.Stepien@city.ac.uk
 
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.net.ServerSocket;
+import java.net.Socket;
 
 // DO NOT EDIT starts
 interface FullNodeInterface {
@@ -30,7 +29,24 @@ public class FullNode implements FullNodeInterface {
 	    // Return true if the node can accept incoming connections
 	    // Return false otherwise
         try {
+
+            System.out.println("Opening the server serverSocket on port " + portNumber);
             serverSocket = new ServerSocket(portNumber);
+            System.out.println("Server waiting for temp. node...");
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Temp. node connected!");
+
+            reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            writer = new OutputStreamWriter(clientSocket.getOutputStream());
+
+            String message = reader.readLine();
+            System.out.println("Received: " + message);
+            if (message.startsWith("START")) {
+                System.out.println("Responding with START to the temp. node");
+                writer.write(message);
+                writer.flush();
+            }
+
         } catch (IOException e) {
             System.err.println(e.getMessage());
             return false;
@@ -41,6 +57,5 @@ public class FullNode implements FullNodeInterface {
     public void handleIncomingConnections(String startingNodeName, String startingNodeAddress) {
 	    // Implement this!
 
-	    return;
     }
 }
