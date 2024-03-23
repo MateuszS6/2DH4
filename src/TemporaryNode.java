@@ -9,6 +9,7 @@
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 
 // DO NOT EDIT starts
 interface TemporaryNodeInterface {
@@ -22,7 +23,7 @@ interface TemporaryNodeInterface {
 public class TemporaryNode implements TemporaryNodeInterface {
     private Socket socket;
     private BufferedReader reader;
-    private Writer writer;
+    private PrintWriter writer;
 
     public boolean start(String startingNodeName, String startingNodeAddress) {
         try {
@@ -31,24 +32,25 @@ public class TemporaryNode implements TemporaryNodeInterface {
             String[] addressParts = startingNodeAddress.split(":");
             String ipAddress = addressParts[0];
             int portNumber = Integer.parseInt(addressParts[1]);
-            System.out.println("Temp. node connecting to " + ipAddress + ':' + portNumber);
+            System.out.println("Connecting to " + ipAddress + ':' + portNumber);
             socket = new Socket(ipAddress, portNumber);
+            System.out.println("Connected to server!");
 
             // Create the reader and writer
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            writer = new OutputStreamWriter(socket.getOutputStream());
+            writer = new PrintWriter(socket.getOutputStream());
 
             // Create and send a START message
-            String message = "START 1" + startingNodeName;
-            System.out.println("Sending a START message to the full node");
-            writer.write(message);
+            String message = "START 1 " + startingNodeName;
+            System.out.println("Sending: " + message);
+            writer.println(message);
             writer.flush();
 
             // Receive and check the response
             String response = reader.readLine();
-            System.out.println("Received from full node: " + response);
+            System.out.println("Received: " + response);
             if (response.equals(message)) {
-                System.out.println("The connection has been started!");
+                System.out.println("Start successful!");
                 return true; // 2D#4 network can be contacted
             } else {
                 socket.close();

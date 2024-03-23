@@ -22,7 +22,7 @@ interface FullNodeInterface {
 public class FullNode implements FullNodeInterface {
     private ServerSocket serverSocket;
     private BufferedReader reader;
-    private Writer writer;
+    private PrintWriter writer;
 
     public boolean listen(String ipAddress, int portNumber) {
 	    // Implement this!
@@ -30,20 +30,20 @@ public class FullNode implements FullNodeInterface {
 	    // Return false otherwise
         try {
 
-            System.out.println("Opening the server serverSocket on port " + portNumber);
+            System.out.println("Opening server on port " + portNumber);
             serverSocket = new ServerSocket(portNumber);
-            System.out.println("Server waiting for temp. node...");
+            System.out.println("Waiting for client...");
             Socket clientSocket = serverSocket.accept();
-            System.out.println("Temp. node connected!");
+            System.out.println("Client connected!");
 
             reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            writer = new OutputStreamWriter(clientSocket.getOutputStream());
+            writer = new PrintWriter(clientSocket.getOutputStream());
 
             String message = reader.readLine();
             System.out.println("Received: " + message);
             if (message.startsWith("START")) {
-                System.out.println("Responding with START to the temp. node");
-                writer.write(message);
+                System.out.println("Responding: " + message);
+                writer.println(message);
                 writer.flush();
             }
 
