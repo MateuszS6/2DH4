@@ -10,6 +10,7 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 
 // DO NOT EDIT starts
 interface FullNodeInterface {
@@ -21,8 +22,11 @@ interface FullNodeInterface {
 
 public class FullNode implements FullNodeInterface {
     private ServerSocket serverSocket;
+    private Socket clientSocket;
     private BufferedReader reader;
     private PrintWriter writer;
+    private boolean started = false;
+    private HashMap<String, String> keyValues;
 
     public boolean listen(String ipAddress, int portNumber) {
 	    // Implement this!
@@ -33,19 +37,11 @@ public class FullNode implements FullNodeInterface {
             System.out.println("Opening server on port " + portNumber);
             serverSocket = new ServerSocket(portNumber);
             System.out.println("Waiting for client...");
-            Socket clientSocket = serverSocket.accept();
+            clientSocket = serverSocket.accept();
             System.out.println("Client connected!");
 
             reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             writer = new PrintWriter(clientSocket.getOutputStream());
-
-            String message = reader.readLine();
-            System.out.println("Received: " + message);
-            if (message.startsWith("START")) {
-                System.out.println("Responding: " + message);
-                writer.println(message);
-                writer.flush();
-            }
 
         } catch (IOException e) {
             System.err.println(e.getMessage());
@@ -56,6 +52,31 @@ public class FullNode implements FullNodeInterface {
     
     public void handleIncomingConnections(String startingNodeName, String startingNodeAddress) {
 	    // Implement this!
+        try {
 
+            String startRequest = reader.readLine();
+            System.out.println("Received: " + startRequest);
+            if (!started && startRequest.startsWith("START")) {
+                System.out.println("Send: " + startRequest);
+                writer.println(startRequest);
+                writer.flush();
+                started = true;
+            }
+            while (started) {
+                String request = reader.readLine();
+                if (request.startsWith("END ")) {
+                    started = false;
+                } else if (request.startsWith("PUT? ")) {
+
+                }
+            }
+            reader.close();
+            writer.close();
+            clientSocket.close();
+            serverSocket.close();
+
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
     }
 }
