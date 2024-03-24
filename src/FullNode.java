@@ -10,6 +10,7 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.HashMap;
 
 // DO NOT EDIT starts
@@ -29,25 +30,24 @@ public class FullNode implements FullNodeInterface {
     private HashMap<String, String> keyValues;
 
     public boolean listen(String ipAddress, int portNumber) {
-	    // Implement this!
-	    // Return true if the node can accept incoming connections
-	    // Return false otherwise
         try {
 
+            // Open a server socket and accept a client socket
             System.out.println("Opening server on port " + portNumber);
             serverSocket = new ServerSocket(portNumber);
             System.out.println("Waiting for client...");
             clientSocket = serverSocket.accept();
             System.out.println("Client connected!");
 
+            // Create the reader and writer
             reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             writer = new PrintWriter(clientSocket.getOutputStream());
 
         } catch (IOException e) {
             System.err.println(e.getMessage());
-            return false;
+            return false; // The node can't accept incoming connections
         }
-        return true;
+        return true; // The node can accept incoming connections
     }
     
     public void handleIncomingConnections(String startingNodeName, String startingNodeAddress) {
@@ -64,10 +64,37 @@ public class FullNode implements FullNodeInterface {
             }
             while (started) {
                 String request = reader.readLine();
-                if (request.startsWith("END ")) {
+                String[] lines = request.split("\n");
+                System.out.println(Arrays.toString(lines));
+                String[] parts = lines[0].split(" ");
+                String command = parts[0];
+                if (command.equals("END")) {
                     started = false;
-                } else if (request.startsWith("PUT? ")) {
-
+                } else if (command.equals("ECHO?")) {
+                    // TODO
+                } else if (command.equals("PUT?")) {
+                    // Implement nearest check
+                    int keyEnd = 1 + Integer.parseInt(parts[1]);
+                    int valEnd = keyEnd + Integer.parseInt(parts[2]);
+                    StringBuilder key = new StringBuilder();
+                    for (int k = 1; k <= keyEnd; k++) {
+                        key.append(lines[k]).append('\n');
+                    }
+                    StringBuilder value = new StringBuilder();
+                    for (int v = keyEnd + 1; v <= valEnd; v++) {
+                        value.append(lines[v]).append('\n');
+                    }
+                    keyValues.put(key.toString(), value.toString());
+                    writer.println("SUCCESS");
+                    writer.flush();
+                } else if (command.equals("GET?")) {
+                    // TODO
+                } else if (command.equals("NOTIFY?")) {
+                    // TODO
+                } else if (command.equals("NEAREST?")) {
+                    // TODO
+                } else {
+                    // TODO
                 }
             }
             reader.close();

@@ -72,7 +72,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
             String request = "PUT? " + keyLines + ' ' + valLines + '\n'
                     + key + '\n'
                     + value;
-            writer.write(request);
+            writer.println(request);
             writer.flush();
 
             // Receive and check the response
@@ -92,7 +92,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
             // Count the lines in the key, and send a GET request for the value
             long keyLines = key.chars().filter(ch -> ch == '\n').count();
             String request = "GET? " + keyLines + '\n' + key;
-            writer.write(request);
+            writer.println(request);
             writer.flush();
 
             // Receive and check the response
