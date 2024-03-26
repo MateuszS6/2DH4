@@ -57,15 +57,15 @@ public class FullNode implements FullNodeInterface {
             String startRequest = in.readLine();
             System.out.println("Received: " + startRequest);
             if (!started && startRequest.startsWith("START")) {
-                System.out.println("Sending: " + "START");
-                out.write("START");
+                out.write("START 1 " + startingNodeName + '\n');
                 out.flush();
+                System.out.println("Sending: " + startRequest);
                 started = true;
             }
             while (started) {
                 String request = in.readLine();
+                System.out.println(request);
                 String[] lines = request.split("\n");
-                System.out.println(Arrays.toString(lines));
                 String[] parts = lines[0].split(" ");
                 String command = parts[0];
                 switch (command) {
@@ -75,7 +75,6 @@ public class FullNode implements FullNodeInterface {
                         // TODO
                     }
                     case "PUT?" -> {
-                        System.out.println(request);
                         // Implement nearest check
 //                        int keyEnd = 1 + Integer.parseInt(parts[1]);
 //                        int valEnd = keyEnd + Integer.parseInt(parts[2]);

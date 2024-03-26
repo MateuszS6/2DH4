@@ -40,15 +40,13 @@ public class TemporaryNode implements TemporaryNodeInterface {
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
             // Create and send a START request
-            String request = "START 1 " + startingNodeName + '\n';
+            String request = "START 1 " + startingNodeName;
             System.out.println("Sending: " + request);
-            out.write(request);
+            out.write(request + '\n');
             out.flush();
 
             // Receive and check the response
-            System.out.println("test");
             String response = in.readLine();
-            System.out.println("test");
             System.out.println("Received: " + response);
             if (response.equals(request)) {
                 System.out.println("Start successful!");
@@ -58,6 +56,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
                 throw new IOException("START unsuccessful");
             }
 
+//            return true;
         } catch (IOException e) {
             System.err.println(e.getMessage());
             return false; // 2D#4 network can't be contacted
