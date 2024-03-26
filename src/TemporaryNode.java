@@ -27,13 +27,10 @@ public class TemporaryNode implements TemporaryNodeInterface {
     public boolean start(String startingNodeName, String startingNodeAddress) {
         try {
 
-            // Split the address and create the serverSocket
+            // Split the address and open a client socket
             String[] addressParts = startingNodeAddress.split(":");
-            String ipAddress = addressParts[0];
-            int portNumber = Integer.parseInt(addressParts[1]);
-            System.out.println("Connecting to " + ipAddress + ':' + portNumber);
-            socket = new Socket(ipAddress, portNumber);
-            System.out.println("Connected to server!");
+            socket = new Socket(addressParts[0], Integer.parseInt(addressParts[1]));
+            System.out.println(" --- Connected!");
 
             // Create the reader and writer
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -41,7 +38,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
             // Create and send a START request
             String request = "START 1 " + startingNodeName;
-            System.out.println("Sending: " + request);
+//            System.out.println("Sending: " + request);
             out.write(request + '\n');
             out.flush();
 
@@ -68,9 +65,9 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
             // Split the key and value into individual words
             String[] keyParts = key.split(" ");
-            if (keyParts.length < 1) throw new IOException("Empty key entered");
+            if (keyParts.length < 1) throw new IOException("Blank key entered");
             String[] valueParts = value.split(" ");
-            if (valueParts.length < 1) throw new IOException("Empty value entered");
+            if (valueParts.length < 1) throw new IOException("Blank value entered");
 
             // Format and send the PUT request with new lines for each word
             StringBuilder request = new StringBuilder("PUT? " + keyParts.length + ' ' + valueParts.length + '\n');

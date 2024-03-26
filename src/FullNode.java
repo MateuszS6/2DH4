@@ -33,7 +33,6 @@ public class FullNode implements FullNodeInterface {
         try {
 
             // Open a server socket and accept a client socket
-            System.out.println("Opening server on port " + portNumber);
             serverSocket = new ServerSocket(portNumber);
             System.out.println("Waiting for client...");
 
@@ -59,17 +58,19 @@ public class FullNode implements FullNodeInterface {
             if (!started && startRequest.startsWith("START")) {
                 out.write("START 1 " + startingNodeName + '\n');
                 out.flush();
-                System.out.println("Sending: " + startRequest);
+//                System.out.println("Sending: " + startRequest);
                 started = true;
             }
             while (started) {
                 String request = in.readLine();
-                System.out.println(request);
-                String[] lines = request.split("\n");
-                String[] parts = lines[0].split(" ");
-                String command = parts[0];
-                switch (command) {
-                    case "END" -> started = false;
+                System.out.println("Received: " + request);
+                String[] lines = request.split("\n"); // Separate lines
+                String[] parts = lines[0].split(" "); // Separate first-line elements
+                switch (parts[0]) { // Request word
+                    case "END" -> {
+                        started = false;
+                        System.out.println("Connection ended.");
+                    }
                     case "ECHO?" -> {
                         System.out.println("Echo back");
                         // TODO
