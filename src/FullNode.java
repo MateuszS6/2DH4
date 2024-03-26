@@ -24,10 +24,10 @@ interface FullNodeInterface {
 public class FullNode implements FullNodeInterface {
     private ServerSocket serverSocket;
     private Socket clientSocket;
-    private BufferedReader reader;
-    private PrintWriter writer;
+    private BufferedReader in;
+    private BufferedWriter out;
     private boolean started = false;
-    private HashMap<String, String> keyValues;
+    private HashMap<String, String> keyValues = new HashMap<>();
 
     public boolean listen(String ipAddress, int portNumber) {
         try {
@@ -36,12 +36,6 @@ public class FullNode implements FullNodeInterface {
             System.out.println("Opening server on port " + portNumber);
             serverSocket = new ServerSocket(portNumber);
             System.out.println("Waiting for client...");
-            clientSocket = serverSocket.accept();
-            System.out.println("Client connected!");
-
-            // Create the reader and writer
-            reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            writer = new PrintWriter(clientSocket.getOutputStream());
 
         } catch (IOException e) {
             System.err.println(e.getMessage());
@@ -53,52 +47,66 @@ public class FullNode implements FullNodeInterface {
     public void handleIncomingConnections(String startingNodeName, String startingNodeAddress) {
 	    // Implement this!
         try {
+            clientSocket = serverSocket.accept();
+            System.out.println("Client connected!");
 
-            String startRequest = reader.readLine();
+            // Create the reader and writer
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+
+            String startRequest = in.readLine();
             System.out.println("Received: " + startRequest);
             if (!started && startRequest.startsWith("START")) {
-                System.out.println("Send: " + startRequest);
-                writer.println(startRequest);
-                writer.flush();
+                System.out.println("Sending: " + "START");
+                out.write("START");
+                out.flush();
                 started = true;
             }
             while (started) {
-                String request = reader.readLine();
+                String request = in.readLine();
                 String[] lines = request.split("\n");
                 System.out.println(Arrays.toString(lines));
                 String[] parts = lines[0].split(" ");
                 String command = parts[0];
-                if (command.equals("END")) {
-                    started = false;
-                } else if (command.equals("ECHO?")) {
-                    // TODO
-                } else if (command.equals("PUT?")) {
-                    // Implement nearest check
-                    int keyEnd = 1 + Integer.parseInt(parts[1]);
-                    int valEnd = keyEnd + Integer.parseInt(parts[2]);
-                    StringBuilder key = new StringBuilder();
-                    for (int k = 1; k <= keyEnd; k++) {
-                        key.append(lines[k]).append('\n');
+                switch (command) {
+                    case "END" -> started = false;
+                    case "ECHO?" -> {
+                        System.out.println("Echo back");
+                        // TODO
                     }
-                    StringBuilder value = new StringBuilder();
-                    for (int v = keyEnd + 1; v <= valEnd; v++) {
-                        value.append(lines[v]).append('\n');
+                    case "PUT?" -> {
+                        System.out.println(request);
+                        // Implement nearest check
+//                        int keyEnd = 1 + Integer.parseInt(parts[1]);
+//                        int valEnd = keyEnd + Integer.parseInt(parts[2]);
+//                        StringBuilder key = new StringBuilder();
+//                        for (int k = 1; k <= keyEnd; k++) {
+//                            key.append(lines[k]).append('\n');
+//                        }
+//                        StringBuilder value = new StringBuilder();
+//                        for (int v = keyEnd + 1; v <= valEnd; v++) {
+//                            value.append(lines[v]).append('\n');
+//                        }
+//                        keyValues.put(key.toString(), value.toString());
+//                        writer.write("SUCCESS");
+//                        writer.flush();
                     }
-                    keyValues.put(key.toString(), value.toString());
-                    writer.println("SUCCESS");
-                    writer.flush();
-                } else if (command.equals("GET?")) {
-                    // TODO
-                } else if (command.equals("NOTIFY?")) {
-                    // TODO
-                } else if (command.equals("NEAREST?")) {
-                    // TODO
-                } else {
-                    // TODO
+                    case "GET?" -> {
+                        System.out.println(command + " not implemented");
+                    }
+                    case "NOTIFY?" -> {
+                        System.out.println(command + " not implemented");
+                    }
+                    case "NEAREST?" -> {
+                        System.out.println(command + " not implemented");
+                    }
+                    default -> {
+                        System.err.println("Request not recognised");
+                    }
                 }
             }
-            reader.close();
-            writer.close();
+            in.close();
+            out.close();
             clientSocket.close();
             serverSocket.close();
 

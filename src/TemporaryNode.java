@@ -9,7 +9,6 @@
 
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
 
 // DO NOT EDIT starts
 interface TemporaryNodeInterface {
@@ -22,8 +21,8 @@ interface TemporaryNodeInterface {
 
 public class TemporaryNode implements TemporaryNodeInterface {
     private Socket socket;
-    private BufferedReader reader;
-    private PrintWriter writer;
+    private BufferedReader in;
+    private BufferedWriter out;
 
     public boolean start(String startingNodeName, String startingNodeAddress) {
         try {
@@ -37,49 +36,57 @@ public class TemporaryNode implements TemporaryNodeInterface {
             System.out.println("Connected to server!");
 
             // Create the reader and writer
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            writer = new PrintWriter(socket.getOutputStream());
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
-            // Create and send a START message
-            String message = "START 1 " + startingNodeName;
-            System.out.println("Sending: " + message);
-            writer.println(message);
-            writer.flush();
+            // Create and send a START request
+            String request = "START 1 " + startingNodeName + '\n';
+            System.out.println("Sending: " + request);
+            out.write(request);
+            out.flush();
 
             // Receive and check the response
-            String response = reader.readLine();
+            System.out.println("test");
+            String response = in.readLine();
+            System.out.println("test");
             System.out.println("Received: " + response);
-            if (response.equals(message)) {
+            if (response.equals(request)) {
                 System.out.println("Start successful!");
                 return true; // 2D#4 network can be contacted
             } else {
                 socket.close();
-                return false; // 2D#4 network can't be contacted
+                throw new IOException("START unsuccessful");
             }
 
         } catch (IOException e) {
             System.err.println(e.getMessage());
-            return false;
+            return false; // 2D#4 network can't be contacted
         }
     }
 
     public boolean store(String key, String value) {
         try {
 
-            // Count the lines in the key and value, and send a PUT request
-            long keyLines = key.chars().filter(ch -> ch == '\n').count();
-            long valLines = value.chars().filter(ch -> ch == '\n').count();
-            String request = "PUT? " + keyLines + ' ' + valLines + '\n'
-                    + key + '\n'
-                    + value;
-            writer.println(request);
-            writer.flush();
+            // Split the key and value into individual words
+            String[] keyParts = key.split(" ");
+            if (keyParts.length < 1) throw new IOException("Empty key entered");
+            String[] valueParts = value.split(" ");
+            if (valueParts.length < 1) throw new IOException("Empty value entered");
+
+            // Format and send the PUT request with new lines for each word
+            StringBuilder request = new StringBuilder("PUT? " + keyParts.length + ' ' + valueParts.length + '\n');
+            for (String k : keyParts) request.append(k).append('\n');
+            for (String v : valueParts) request.append(v).append('\n');
+            out.write(request.toString());
+            out.flush();
+            System.out.println(request);
 
             // Receive and check the response
-            String response = reader.readLine();
+            String response = in.readLine();
             return response.equals("SUCCESS"); // SUCCESS -> worked; FAILED -> failed
 
         } catch (IOException e) {
+            System.out.println("error in temp node");
             System.err.println(e.getMessage());
             return false; // The STORE failed
         }
@@ -89,16 +96,18 @@ public class TemporaryNode implements TemporaryNodeInterface {
         String value = null; // Return null if the GET failed
         try {
 
-            // Count the lines in the key, and send a GET request for the value
-            long keyLines = key.chars().filter(ch -> ch == '\n').count();
-            String request = "GET? " + keyLines + '\n' + key;
-            writer.println(request);
-            writer.flush();
+            // Split the key into individual words
+            String[] keyParts = key.split(" ");
+            if (keyParts.length < 1) throw new IOException("Empty key entered");
+            String request = "GET? " + keyParts.length + '\n' + key;
+            out.write(request);
+            out.flush();
 
             // Receive and check the response
-            String response = reader.readLine();
+            String response = in.readLine();
             if (response.startsWith("VALUE")) // VALUE... -> worked; NOPE -> failed
                 value = response.substring(response.indexOf('\n') + 1); // The string value is a substring
+            else if (response.equals("NOPE")) System.out.println(response);
 
         } catch (IOException e) {
             System.err.println(e.getMessage());
