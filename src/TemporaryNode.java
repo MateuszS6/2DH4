@@ -97,7 +97,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
             String[] keyParts = key.split(" ");
             if (keyParts.length < 1) throw new IOException("Empty key entered");
             String request = "GET? " + keyParts.length + '\n' + key;
-            out.write(request);
+            out.write(request + '\n');
             out.flush();
 
             // Receive and check the response

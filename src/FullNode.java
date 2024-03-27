@@ -65,6 +65,7 @@ public class FullNode implements FullNodeInterface {
                 System.out.println("Received: " + request);
                 String[] parts = request.split(" "); // Separate first-line elements
                 String response = "";
+
                 switch (parts[0]) { // Request command
                     case "END" -> {
                         started = false;
@@ -74,7 +75,7 @@ public class FullNode implements FullNodeInterface {
                         System.out.println("ECHO not implemented");
                     }
                     case "PUT?" -> {
-                        // TODO: Implement nearest check
+                        // TODO: Implement NEAREST? check
                         StringBuilder key = new StringBuilder();
                         int keyLines = Integer.parseInt(parts[1]);
                         for (int k = 0; k < keyLines; k++) key.append(in.readLine()).append('\n');
@@ -86,8 +87,17 @@ public class FullNode implements FullNodeInterface {
 //                        response = "FAILED";
                     }
                     case "GET?" -> {
-                        System.out.println("GET not implemented");
-                        // TODO
+                        StringBuilder key = new StringBuilder();
+                        int keyLines = Integer.parseInt(parts[1]);
+                        for (int k = 0; k < keyLines; k++) key.append(in.readLine()).append('\n');
+                        String getVal = keyValues.get(key.toString());
+                        if (getVal == null) response = "NOPE";
+                        else {
+                            String[] valParts = getVal.split("\n");
+                            StringBuilder value = new StringBuilder();
+                            for (String v : valParts) value.append(v);
+                            response = "VALUE " + valParts.length + '\n' + value;
+                        }
                     }
                     case "NOTIFY?" -> {
                         System.out.println("NOTIFY not implemented");
