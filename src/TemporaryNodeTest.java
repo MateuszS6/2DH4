@@ -3,12 +3,12 @@ public class TemporaryNodeTest {
         TemporaryNode client = new TemporaryNode();
 
         boolean start = client.start("mateusz.stepien@city.ac.uk:MyNode", "127.0.0.1:2345");
-        System.out.println(start ? " -> START worked <-" : " -x START failed x-");
+        System.out.println(start ? " -> START worked <-\n" : " -x START failed x-\n");
 
-        boolean store = client.store("Hello there", "General Kenobi");
-        System.out.println(store ? " -> STORE worked <-" : " -x STORE failed x-");
+        boolean store = client.store("Hello\nthere\n", "General\nKenobi\n");
+        System.out.println(store ? " -> STORE worked <-\n" : " -x STORE failed x-\n");
 
-        String get = client.get("Hello there");
-        System.out.println(get != null ? " -> GET worked <-" : " -x GET failed x-");
+        String get = client.get("Hello\nthere\n");
+        System.out.println(get != null ? " -> GET worked <-\n" : " -x GET failed x-\n");
     }
 }

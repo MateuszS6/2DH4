@@ -45,7 +45,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
             // Receive and check the response
             String response = in.readLine();
             System.out.println("Received: " + response);
-            if (response.equals(request)) {
+            if (response.equals(request)) { // START... (same as sent) -> worked
                 System.out.println("Start successful!");
                 return true; // 2D#4 network can be contacted
             } else {
@@ -64,9 +64,9 @@ public class TemporaryNode implements TemporaryNodeInterface {
         try {
 
             // Split the key and value into individual words
-            String[] keyParts = key.split(" ");
+            String[] keyParts = key.split("\n");
             if (keyParts.length < 1) throw new IOException("Blank key entered");
-            String[] valueParts = value.split(" ");
+            String[] valueParts = value.split("\n");
             if (valueParts.length < 1) throw new IOException("Blank value entered");
 
             // Format and send the PUT request with new lines for each word
@@ -75,12 +75,12 @@ public class TemporaryNode implements TemporaryNodeInterface {
             for (String v : valueParts) request.append(v).append('\n');
             out.write(request.toString());
             out.flush();
-            System.out.println(request);
 
             // Receive and check the response
             String response = in.readLine();
-            if (response.equals("SUCCESS")) return true;
-            else if (response.equals("FAILED")) return false;
+            System.out.println("Received: " + response);
+            if (response.equals("SUCCESS")) return true; // SUCCESS -> worked
+            else if (response.equals("FAILED")) return false; // FAILED -> failed
             else throw new IOException("Unexpected response: " + response);
 
         } catch (IOException e) {
@@ -94,17 +94,26 @@ public class TemporaryNode implements TemporaryNodeInterface {
         try {
 
             // Split the key into individual words
-            String[] keyParts = key.split(" ");
+            String[] keyParts = key.split("\n");
             if (keyParts.length < 1) throw new IOException("Empty key entered");
-            String request = "GET? " + keyParts.length + '\n' + key;
-            out.write(request + '\n');
+
+            // Format and send the GET request
+            StringBuilder request = new StringBuilder("GET? " + keyParts.length + '\n');
+            for (String k : keyParts) request.append(k).append('\n');
+            out.write(request.toString() + '\n');
             out.flush();
 
             // Receive and check the response
             String response = in.readLine();
-            if (response.startsWith("VALUE")) // VALUE... -> worked; NOPE -> failed
-                value = response.substring(response.indexOf('\n') + 1); // The string value is a substring
-            else if (response.equals("NOPE")) System.out.println(response);
+            System.out.println("Received: " + response);
+            if (response.startsWith("VALUE")) { // VALUE... -> worked
+                String[] responseParts = response.split(" ");
+                int valLines = Integer.parseInt(responseParts[1]);
+                StringBuilder getVal = new StringBuilder();
+                for (int v = 0; v < valLines; v++) getVal.append(in.readLine()).append('\n');
+                value = getVal.toString();
+            }
+            else if (response.equals("NOPE")) System.out.println(response); // NOPE -> failed
             else throw new IOException("Unexpected response: " + response);
 
         } catch (IOException e) {

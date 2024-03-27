@@ -46,7 +46,7 @@ public class FullNode implements FullNodeInterface {
 	    // Implement this!
         try {
             clientSocket = serverSocket.accept();
-            System.out.println("Client connected!");
+            System.out.println(" --- Connected!");
 
             // Create the reader and writer
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -68,7 +68,7 @@ public class FullNode implements FullNodeInterface {
 
                 switch (parts[0]) { // Request command
                     case "END" -> {
-                        started = false;
+                        started = false; // Break
                         System.out.println("Connection ended.");
                     }
                     case "ECHO?" -> {
@@ -90,12 +90,10 @@ public class FullNode implements FullNodeInterface {
                         StringBuilder key = new StringBuilder();
                         int keyLines = Integer.parseInt(parts[1]);
                         for (int k = 0; k < keyLines; k++) key.append(in.readLine()).append('\n');
-                        String getVal = keyValues.get(key.toString());
-                        if (getVal == null) response = "NOPE";
+                        String value = keyValues.get(key.toString());
+                        if (value == null) response = "NOPE";
                         else {
-                            String[] valParts = getVal.split("\n");
-                            StringBuilder value = new StringBuilder();
-                            for (String v : valParts) value.append(v);
+                            String[] valParts = value.split("\n");
                             response = "VALUE " + valParts.length + '\n' + value;
                         }
                     }
