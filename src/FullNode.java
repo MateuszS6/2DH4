@@ -10,7 +10,6 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.HashMap;
 
 // DO NOT EDIT starts
@@ -64,46 +63,44 @@ public class FullNode implements FullNodeInterface {
             while (started) {
                 String request = in.readLine();
                 System.out.println("Received: " + request);
-                String[] lines = request.split("\n"); // Separate lines
-                String[] parts = lines[0].split(" "); // Separate first-line elements
-                switch (parts[0]) { // Request word
+                String[] parts = request.split(" "); // Separate first-line elements
+                String response = "";
+                switch (parts[0]) { // Request command
                     case "END" -> {
                         started = false;
                         System.out.println("Connection ended.");
                     }
                     case "ECHO?" -> {
-                        System.out.println("Echo back");
-                        // TODO
+                        System.out.println("ECHO not implemented");
                     }
                     case "PUT?" -> {
-                        // Implement nearest check
-//                        int keyEnd = 1 + Integer.parseInt(parts[1]);
-//                        int valEnd = keyEnd + Integer.parseInt(parts[2]);
-//                        StringBuilder key = new StringBuilder();
-//                        for (int k = 1; k <= keyEnd; k++) {
-//                            key.append(lines[k]).append('\n');
-//                        }
-//                        StringBuilder value = new StringBuilder();
-//                        for (int v = keyEnd + 1; v <= valEnd; v++) {
-//                            value.append(lines[v]).append('\n');
-//                        }
-//                        keyValues.put(key.toString(), value.toString());
-//                        writer.write("SUCCESS");
-//                        writer.flush();
+                        // TODO: Implement nearest check
+                        StringBuilder key = new StringBuilder();
+                        int keyLines = Integer.parseInt(parts[1]);
+                        for (int k = 0; k < keyLines; k++) key.append(in.readLine()).append('\n');
+                        StringBuilder value = new StringBuilder();
+                        int valLines = Integer.parseInt(parts[2]);
+                        for (int v = 0; v < valLines; v++) value.append(in.readLine()).append('\n');
+                        keyValues.put(key.toString(), value.toString());
+                        response = "SUCCESS";
+//                        response = "FAILED";
                     }
                     case "GET?" -> {
-                        System.out.println(command + " not implemented");
+                        System.out.println("GET not implemented");
+                        // TODO
                     }
                     case "NOTIFY?" -> {
-                        System.out.println(command + " not implemented");
+                        System.out.println("NOTIFY not implemented");
                     }
                     case "NEAREST?" -> {
-                        System.out.println(command + " not implemented");
+                        System.out.println("NEAREST not implemented");
                     }
                     default -> {
                         System.err.println("Request not recognised");
                     }
                 }
+                out.write(response + '\n');
+                out.flush();
             }
             in.close();
             out.close();

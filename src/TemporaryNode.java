@@ -79,10 +79,11 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
             // Receive and check the response
             String response = in.readLine();
-            return response.equals("SUCCESS"); // SUCCESS -> worked; FAILED -> failed
+            if (response.equals("SUCCESS")) return true;
+            else if (response.equals("FAILED")) return false;
+            else throw new IOException("Unexpected response: " + response);
 
         } catch (IOException e) {
-            System.out.println("error in temp node");
             System.err.println(e.getMessage());
             return false; // The STORE failed
         }
@@ -104,6 +105,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
             if (response.startsWith("VALUE")) // VALUE... -> worked; NOPE -> failed
                 value = response.substring(response.indexOf('\n') + 1); // The string value is a substring
             else if (response.equals("NOPE")) System.out.println(response);
+            else throw new IOException("Unexpected response: " + response);
 
         } catch (IOException e) {
             System.err.println(e.getMessage());
