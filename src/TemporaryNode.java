@@ -44,11 +44,9 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
             // Receive and check the response
             String response = in.readLine();
-            System.out.println("Received: " + response);
-            if (response.equals(request)) { // START... (same as sent) -> worked
-                System.out.println("Start successful!");
-                return true; // 2D#4 network can be contacted
-            } else {
+            System.out.println("Received: " + response); // START... (same as sent) -> worked
+            if (response.equals(request)) return true; // 2D#4 network can be contacted
+            else {
                 socket.close();
                 throw new IOException("START unsuccessful");
             }
@@ -70,10 +68,8 @@ public class TemporaryNode implements TemporaryNodeInterface {
             if (valueParts.length < 1) throw new IOException("Blank value entered");
 
             // Format and send the PUT request with new lines for each word
-            StringBuilder request = new StringBuilder("PUT? " + keyParts.length + ' ' + valueParts.length + '\n');
-            for (String k : keyParts) request.append(k).append('\n');
-            for (String v : valueParts) request.append(v).append('\n');
-            out.write(request.toString());
+            String request = "PUT? " + keyParts.length + ' ' + valueParts.length + '\n' + key + value;
+            out.write(request);
             out.flush();
 
             // Receive and check the response
@@ -98,9 +94,8 @@ public class TemporaryNode implements TemporaryNodeInterface {
             if (keyParts.length < 1) throw new IOException("Empty key entered");
 
             // Format and send the GET request
-            StringBuilder request = new StringBuilder("GET? " + keyParts.length + '\n');
-            for (String k : keyParts) request.append(k).append('\n');
-            out.write(request.toString() + '\n');
+            String request = "GET? " + keyParts.length + '\n' + key;
+            out.write(request);
             out.flush();
 
             // Receive and check the response
@@ -112,8 +107,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
                 StringBuilder getVal = new StringBuilder();
                 for (int v = 0; v < valLines; v++) getVal.append(in.readLine()).append('\n');
                 value = getVal.toString();
-            }
-            else if (response.equals("NOPE")) System.out.println(response); // NOPE -> failed
+            } else if (response.equals("NOPE")) System.out.println(response); // NOPE -> failed
             else throw new IOException("Unexpected response: " + response);
 
         } catch (IOException e) {
