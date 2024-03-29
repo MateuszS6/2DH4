@@ -24,6 +24,19 @@ public class TemporaryNode implements TemporaryNodeInterface {
     private BufferedReader in;
     private BufferedWriter out;
 
+    public static void main(String[] args) {
+        TemporaryNode client = new TemporaryNode();
+
+        boolean start = client.start("mateusz.stepien@city.ac.uk:MyNode", "127.0.0.1:2345");
+        System.out.println(start ? " -> START worked <-\n" : " -x START failed x-\n");
+
+        boolean store = client.store("Hello\nthere\n", "General\nKenobi\n");
+        System.out.println(store ? " -> STORE worked <-\n" : " -x STORE failed x-\n");
+
+        String get = client.get("Hello\nthere\n");
+        System.out.println(get != null ? " -> GET worked <-\n" : " -x GET failed x-\n");
+    }
+
     public boolean start(String startingNodeName, String startingNodeAddress) {
         try {
 
@@ -37,8 +50,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
             // Create and send a START request
-            String request = "START 1 " + startingNodeName;
-//            System.out.println("Sending: " + request);
+            String request = "START" + 1 + startingNodeName;
             out.write(request + '\n');
             out.flush();
 
@@ -48,10 +60,10 @@ public class TemporaryNode implements TemporaryNodeInterface {
             if (response.equals(request)) return true; // 2D#4 network can be contacted
             else {
                 socket.close();
-                throw new IOException("START unsuccessful");
+                if (response.equals("END")) throw new IOException("Connection ENDED.");
+                else throw new IOException("Unexpected response.");
             }
 
-//            return true;
         } catch (IOException e) {
             System.err.println(e.getMessage());
             return false; // 2D#4 network can't be contacted

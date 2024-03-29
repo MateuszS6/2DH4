@@ -8,6 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 public class HashID {
+	public static void main(String[] args) {
+		// TODO: test hashing
+	}
 
     public static byte [] computeHashID(String line) throws Exception {
 		if (line.endsWith("\n")) {

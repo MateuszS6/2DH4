@@ -26,7 +26,14 @@ public class FullNode implements FullNodeInterface {
     private BufferedReader in;
     private BufferedWriter out;
     private boolean started = false;
+    private HashMap<Integer, String[]> network = new HashMap<>();
     private HashMap<String, String> keyValues = new HashMap<>();
+
+    public static void main(String[] args) {
+        FullNode server = new FullNode();
+        if (server.listen("127.0.0.1", 2345))
+            server.handleIncomingConnections("mateusz.stepien@city.ac.uk:MyNode", "127.0.0.1:2345");
+    }
 
     public boolean listen(String ipAddress, int portNumber) {
         try {
@@ -55,24 +62,26 @@ public class FullNode implements FullNodeInterface {
             String startRequest = in.readLine();
             System.out.println("Received: " + startRequest);
             if (!started && startRequest.startsWith("START")) {
-                out.write("START 1 " + startingNodeName + '\n');
+                out.write("START" + 1 + startingNodeName + '\n');
                 out.flush();
-//                System.out.println("Sending: " + startRequest);
                 started = true;
+            } else {
+                out.write("END Invalid START request");
+                out.flush();
             }
             while (started) {
                 String request = in.readLine();
                 System.out.println("Received: " + request);
                 String[] parts = request.split(" "); // Separate first-line elements
-                String response = "";
+                String response;
 
                 switch (parts[0]) { // Request command
                     case "END" -> {
                         started = false; // Break
-                        System.out.println("Connection ended.");
+                        throw new IOException(request);
                     }
                     case "ECHO?" -> {
-                        System.out.println("ECHO not implemented");
+                        throw new IOException("ECHO not implemented");
                     }
                     case "PUT?" -> {
                         // TODO: Implement NEAREST? check
@@ -98,20 +107,19 @@ public class FullNode implements FullNodeInterface {
                         }
                     }
                     case "NOTIFY?" -> {
-                        System.out.println("NOTIFY not implemented");
+                        throw new IOException("NOTIFY not implemented");
                     }
                     case "NEAREST?" -> {
-                        System.out.println("NEAREST not implemented");
+                        throw new IOException("NEAREST not implemented");
                     }
                     default -> {
-                        System.err.println("Request not recognised");
+                        started = false;
+                        throw new IOException("Unexpected request.");
                     }
                 }
                 out.write(response + '\n');
                 out.flush();
             }
-            in.close();
-            out.close();
             clientSocket.close();
             serverSocket.close();
 
