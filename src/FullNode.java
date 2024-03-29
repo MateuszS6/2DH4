@@ -63,7 +63,7 @@ public class FullNode implements FullNodeInterface {
 
             while (started) {
                 // Read and split first line of request
-                String request = readNextLine();
+                String request = Node.readNextLine(in);
                 System.out.println("Received: " + request);
                 String[] requestParts = request.split(" "); // Separate first-line elements
 
@@ -91,36 +91,16 @@ public class FullNode implements FullNodeInterface {
         }
     }
 
-    public void send(String string) {
-        try {
-            if (!string.endsWith("\n")) out.write(string + '\n');
-            else out.write(string);
-            out.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public String readNextLine() {
-        String line;
-        try {
-            line = in.readLine();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return line;
-    }
-
     public void handleStart(String startingNodeName) {
         // TODO: Robustness
-        String request = readNextLine();
+        String request = Node.readNextLine(in);
         System.out.println("Received: " + request);
         if (!started) {
             if (request.startsWith("START")) {
                 // TODO: Implement NOTIFY?
-                send("START" + 1 + startingNodeName + '\n');
+                Node.send(out, "START" + 1 + startingNodeName + '\n');
                 started = true;
-            } else send("END Invalid START request");
+            } else Node.send(out, "END Invalid START request");
         }
     }
 
@@ -128,22 +108,22 @@ public class FullNode implements FullNodeInterface {
         // TODO: Implement NEAREST? check
         StringBuilder key = new StringBuilder();
         int keyLines = Integer.parseInt(parts[1]);
-        for (int k = 0; k < keyLines; k++) key.append(readNextLine()).append('\n');
+        for (int k = 0; k < keyLines; k++) key.append(Node.readNextLine(in)).append('\n');
         StringBuilder value = new StringBuilder();
         int valLines = Integer.parseInt(parts[2]);
-        for (int v = 0; v < valLines; v++) value.append(readNextLine()).append('\n');
+        for (int v = 0; v < valLines; v++) value.append(Node.readNextLine(in)).append('\n');
         keyValues.put(key.toString(), value.toString());
-        send("SUCCESS");
-//        send("FAILED");
+        Node.send(out, "SUCCESS");
+//        Node.send(out, "FAILED");
     }
 
     public void handleGet(String[] parts) {
         StringBuilder key = new StringBuilder();
         int keyLines = Integer.parseInt(parts[1]);
-        for (int k = 0; k < keyLines; k++) key.append(readNextLine()).append('\n');
+        for (int k = 0; k < keyLines; k++) key.append(Node.readNextLine(in)).append('\n');
         String value = keyValues.get(key.toString());
-        if (value == null) send("NOPE");
-        else send("VALUE " + value.split("\n").length + value);
+        if (value == null) Node.send(out, "NOPE");
+        else Node.send(out, "VALUE " + value.split("\n").length + value);
     }
 
     public void handleEcho() {
