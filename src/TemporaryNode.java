@@ -51,11 +51,10 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
             // Create and send a START request
             String request = "START" + 1 + startingNodeName;
-            out.write(request + '\n');
-            out.flush();
+            Node.send(out, request);
 
             // Receive and check the response
-            String response = in.readLine();
+            String response = Node.readNextLine(in);
             System.out.println("Received: " + response); // START... (same as sent) -> worked
             if (response.equals(request)) return true; // 2D#4 network can be contacted
             else {
@@ -71,60 +70,48 @@ public class TemporaryNode implements TemporaryNodeInterface {
     }
 
     public boolean store(String key, String value) {
-        try {
 
-            // Split the key and value into individual words
-            String[] keyParts = key.split("\n");
-            if (keyParts.length < 1) throw new IOException("Blank key entered");
-            String[] valueParts = value.split("\n");
-            if (valueParts.length < 1) throw new IOException("Blank value entered");
+        // Split the key and value into individual words
+        String[] keyParts = key.split("\n");
+        if (keyParts.length < 1) System.err.println("Blank key entered");
+        String[] valueParts = value.split("\n");
+        if (valueParts.length < 1) System.err.println("Blank value entered");
 
-            // Format and send the PUT request with new lines for each word
-            String request = "PUT? " + keyParts.length + ' ' + valueParts.length + '\n' + key + value;
-            out.write(request);
-            out.flush();
+        // Format and send the PUT request with new lines for each word
+        Node.send(out, "PUT? " + keyParts.length + ' ' + valueParts.length + '\n' + key + value);
 
-            // Receive and check the response
-            String response = in.readLine();
-            System.out.println("Received: " + response);
-            if (response.equals("SUCCESS")) return true; // SUCCESS -> worked
-            else if (response.equals("FAILED")) return false; // FAILED -> failed
-            else throw new IOException("Unexpected response: " + response);
+        // Receive and check the response
+        String response = Node.readNextLine(in);
+        System.out.println("Received: " + response);
+        if (response.equals("SUCCESS")) return true; // SUCCESS -> worked
+        else if (response.equals("FAILED")) return false; // FAILED -> failed
+        else System.err.println("Unexpected response: " + response);
 
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-            return false; // The STORE failed
-        }
+        return false;
     }
 
     public String get(String key) {
         String value = null; // Return null if the GET failed
-        try {
 
-            // Split the key into individual words
-            String[] keyParts = key.split("\n");
-            if (keyParts.length < 1) throw new IOException("Empty key entered");
+        // Split the key into individual words
+        String[] keyParts = key.split("\n");
+        if (keyParts.length < 1) System.err.println("Empty key entered");
 
-            // Format and send the GET request
-            String request = "GET? " + keyParts.length + '\n' + key;
-            out.write(request);
-            out.flush();
+        // Format and send the GET request
+        Node.send(out, "GET? " + keyParts.length + '\n' + key);
 
-            // Receive and check the response
-            String response = in.readLine();
-            System.out.println("Received: " + response);
-            if (response.startsWith("VALUE")) { // VALUE... -> worked
-                String[] responseParts = response.split(" ");
-                int valLines = Integer.parseInt(responseParts[1]);
-                StringBuilder getVal = new StringBuilder();
-                for (int v = 0; v < valLines; v++) getVal.append(in.readLine()).append('\n');
-                value = getVal.toString();
-            } else if (response.equals("NOPE")) System.out.println(response); // NOPE -> failed
-            else throw new IOException("Unexpected response: " + response);
+        // Receive and check the response
+        String response = Node.readNextLine(in);
+        System.out.println("Received: " + response);
+        if (response.startsWith("VALUE")) { // VALUE... -> worked
+            String[] responseParts = response.split(" ");
+            int valLines = Integer.parseInt(responseParts[1]);
+            StringBuilder getVal = new StringBuilder();
+            for (int v = 0; v < valLines; v++) getVal.append(Node.readNextLine(in)).append('\n');
+            value = getVal.toString();
+        } else if (response.equals("NOPE")) System.out.println(response); // NOPE -> failed
+        else System.err.println("Unexpected response: " + response);
 
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-        }
         return value; // The GET worked/failed
     }
 }
