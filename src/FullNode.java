@@ -59,17 +59,10 @@ public class FullNode implements FullNodeInterface {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 
-            String startRequest = in.readLine();
-            System.out.println("Received: " + startRequest);
-            if (!started && startRequest.startsWith("START")) {
-                out.write("START" + 1 + startingNodeName + '\n');
-                out.flush();
-                started = true;
-            } else {
-                out.write("END Invalid START request");
-                out.flush();
-            }
+            handleStart(startingNodeName);
+
             while (started) {
+                // Read and split first line of request
                 String request = in.readLine();
                 System.out.println("Received: " + request);
                 String[] parts = request.split(" "); // Separate first-line elements
@@ -127,4 +120,27 @@ public class FullNode implements FullNodeInterface {
             System.err.println(e.getMessage());
         }
     }
+
+    public void handleStart(String startingNodeName) {
+        // TODO: Robustness
+        try {
+            String request = in.readLine();
+            System.out.println("Received: " + request);
+            if (!started) {
+                if (request.startsWith("START")) {
+                    // TODO: Implement NOTIFY?
+                    out.write("START" + 1 + startingNodeName + '\n');
+                    out.flush();
+                    started = true;
+                } else{
+                    out.write("END Invalid START request");
+                    out.flush();
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    
 }
