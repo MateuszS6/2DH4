@@ -98,7 +98,7 @@ public class FullNode implements FullNodeInterface {
         if (!started) {
             if (request.startsWith("START")) {
                 // TODO: Implement NOTIFY?
-                Node.send(out, "START" + 1 + startingNodeName + '\n');
+                Node.send(out, "START" + 1 + startingNodeName);
                 started = true;
             } else Node.send(out, "END Invalid START request");
         }
@@ -123,7 +123,7 @@ public class FullNode implements FullNodeInterface {
         for (int k = 0; k < keyLines; k++) key.append(Node.readNextLine(in)).append('\n');
         String value = keyValues.get(key.toString());
         if (value == null) Node.send(out, "NOPE");
-        else Node.send(out, "VALUE " + value.split("\n").length + value);
+        else Node.send(out, "VALUE " + value.split("\n").length + '\n' + value);
     }
 
     public void handleEcho() {

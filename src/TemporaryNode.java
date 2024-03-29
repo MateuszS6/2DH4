@@ -111,6 +111,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
             value = getVal.toString();
         } else if (response.equals("NOPE")) System.out.println(response); // NOPE -> failed
         else System.err.println("Unexpected response: " + response);
+        // TODO: Unexpected response -> END
 
         return value; // The GET worked/failed
     }
