@@ -63,55 +63,25 @@ public class FullNode implements FullNodeInterface {
 
             while (started) {
                 // Read and split first line of request
-                String request = in.readLine();
+                String request = readNextLine();
                 System.out.println("Received: " + request);
-                String[] parts = request.split(" "); // Separate first-line elements
-                String response;
+                String[] requestParts = request.split(" "); // Separate first-line elements
 
-                switch (parts[0]) { // Request command
+                switch (requestParts[0]) { // Request command
+                    case "PUT?" -> handleStore(requestParts);
+                    case "GET?" -> handleGet(requestParts);
+                    case "ECHO?" -> handleEcho();
+                    case "NOTIFY?" -> handleNotify();
+                    case "NEAREST?" -> handleNearest();
                     case "END" -> {
                         started = false; // Break
                         throw new IOException(request);
-                    }
-                    case "ECHO?" -> {
-                        throw new IOException("ECHO not implemented");
-                    }
-                    case "PUT?" -> {
-                        // TODO: Implement NEAREST? check
-                        StringBuilder key = new StringBuilder();
-                        int keyLines = Integer.parseInt(parts[1]);
-                        for (int k = 0; k < keyLines; k++) key.append(in.readLine()).append('\n');
-                        StringBuilder value = new StringBuilder();
-                        int valLines = Integer.parseInt(parts[2]);
-                        for (int v = 0; v < valLines; v++) value.append(in.readLine()).append('\n');
-                        keyValues.put(key.toString(), value.toString());
-                        response = "SUCCESS";
-//                        response = "FAILED";
-                    }
-                    case "GET?" -> {
-                        StringBuilder key = new StringBuilder();
-                        int keyLines = Integer.parseInt(parts[1]);
-                        for (int k = 0; k < keyLines; k++) key.append(in.readLine()).append('\n');
-                        String value = keyValues.get(key.toString());
-                        if (value == null) response = "NOPE";
-                        else {
-                            String[] valParts = value.split("\n");
-                            response = "VALUE " + valParts.length + '\n' + value;
-                        }
-                    }
-                    case "NOTIFY?" -> {
-                        throw new IOException("NOTIFY not implemented");
-                    }
-                    case "NEAREST?" -> {
-                        throw new IOException("NEAREST not implemented");
                     }
                     default -> {
                         started = false;
                         throw new IOException("Unexpected request.");
                     }
                 }
-                out.write(response + '\n');
-                out.flush();
             }
             clientSocket.close();
             serverSocket.close();
@@ -121,26 +91,70 @@ public class FullNode implements FullNodeInterface {
         }
     }
 
-    public void handleStart(String startingNodeName) {
-        // TODO: Robustness
+    public void send(String string) {
         try {
-            String request = in.readLine();
-            System.out.println("Received: " + request);
-            if (!started) {
-                if (request.startsWith("START")) {
-                    // TODO: Implement NOTIFY?
-                    out.write("START" + 1 + startingNodeName + '\n');
-                    out.flush();
-                    started = true;
-                } else{
-                    out.write("END Invalid START request");
-                    out.flush();
-                }
-            }
+            if (!string.endsWith("\n")) out.write(string + '\n');
+            else out.write(string);
+            out.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    
+    public String readNextLine() {
+        String line;
+        try {
+            line = in.readLine();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return line;
+    }
+
+    public void handleStart(String startingNodeName) {
+        // TODO: Robustness
+        String request = readNextLine();
+        System.out.println("Received: " + request);
+        if (!started) {
+            if (request.startsWith("START")) {
+                // TODO: Implement NOTIFY?
+                send("START" + 1 + startingNodeName + '\n');
+                started = true;
+            } else send("END Invalid START request");
+        }
+    }
+
+    public void handleStore(String[] parts) {
+        // TODO: Implement NEAREST? check
+        StringBuilder key = new StringBuilder();
+        int keyLines = Integer.parseInt(parts[1]);
+        for (int k = 0; k < keyLines; k++) key.append(readNextLine()).append('\n');
+        StringBuilder value = new StringBuilder();
+        int valLines = Integer.parseInt(parts[2]);
+        for (int v = 0; v < valLines; v++) value.append(readNextLine()).append('\n');
+        keyValues.put(key.toString(), value.toString());
+        send("SUCCESS");
+//        send("FAILED");
+    }
+
+    public void handleGet(String[] parts) {
+        StringBuilder key = new StringBuilder();
+        int keyLines = Integer.parseInt(parts[1]);
+        for (int k = 0; k < keyLines; k++) key.append(readNextLine()).append('\n');
+        String value = keyValues.get(key.toString());
+        if (value == null) send("NOPE");
+        else send("VALUE " + value.split("\n").length + value);
+    }
+
+    public void handleEcho() {
+        System.err.println("ECHO not implemented");
+    }
+
+    public void handleNotify() {
+        System.err.println("NOTIFY? not implemented");
+    }
+
+    public void handleNearest() {
+        System.err.println("NEAREST not implemented");
+    }
 }
