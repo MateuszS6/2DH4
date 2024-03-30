@@ -11,6 +11,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 // DO NOT EDIT starts
 interface FullNodeInterface {
@@ -37,7 +38,6 @@ public class FullNode implements FullNodeInterface {
 
     public boolean listen(String ipAddress, int portNumber) {
         try {
-
             // Open a server socket and accept a client socket
             serverSocket = new ServerSocket(portNumber);
             System.out.println("Waiting for client...");
@@ -59,67 +59,56 @@ public class FullNode implements FullNodeInterface {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 
-            handleStart(startingNodeName);
-
+            if (!started) handleStart(startingNodeName);
             while (started) {
                 // Read and split first line of request
                 String request = Node.readNextLine(in);
-                System.out.println("Received: " + request);
-                String[] requestParts = request.split(" "); // Separate first-line elements
+                String[] requestParts = request.split(" ");
+                String requestWord = requestParts[0]; // Request command
 
-                switch (requestParts[0]) { // Request command
-                    case "PUT?" -> handleStore(requestParts);
-                    case "GET?" -> handleGet(requestParts);
-                    case "ECHO?" -> handleEcho();
-                    case "NOTIFY?" -> handleNotify();
-                    case "NEAREST?" -> handleNearest();
-                    case "END" -> {
-                        started = false; // Break
-                        throw new IOException(request);
-                    }
-                    default -> {
-                        started = false;
-                        throw new IOException("Unexpected request.");
-                    }
-                }
+                if (requestWord.equals("PUT?")) handleStore(requestParts, startingNodeName);
+                else if (requestWord.equals("GET?")) handleGet(requestParts);
+                else if (requestWord.equals("ECHO?")) handleEcho();
+                else if (requestWord.equals("NOTIFY?")) handleNotify();
+                else if (requestWord.equals("NEAREST?")) handleNearest();
+                else if (requestWord.equals("END")) handleEnd(request.substring(4));
+                else handleEnd("Unexpected request.");
             }
-            clientSocket.close();
-            serverSocket.close();
-
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
     }
 
-    public void handleStart(String startingNodeName) {
+    public void handleStart(String name) {
         // TODO: Robustness
-        String request = Node.readNextLine(in);
-        System.out.println("Received: " + request);
-        if (!started) {
-            if (request.startsWith("START")) {
-                // TODO: Implement NOTIFY?
-                Node.send(out, "START" + 1 + startingNodeName);
-                started = true;
-            } else Node.send(out, "END Invalid START request");
-        }
+        if (Node.readNextLine(in).startsWith("START")) {
+            // TODO: Implement NOTIFY?
+            Node.send(out, "START 1 " + name);
+            started = true;
+        } else Node.send(out, "END Invalid START request");
     }
 
-    public void handleStore(String[] parts) {
+    public void handleStore(String[] parts, String name) {
         // TODO: Implement NEAREST? check
         StringBuilder key = new StringBuilder();
         int keyLines = Integer.parseInt(parts[1]);
         for (int k = 0; k < keyLines; k++) key.append(Node.readNextLine(in)).append('\n');
+//        String keyHashID = HashID.bytesToHex(HashID.computeHashID(key.toString()));
+        // Loop through network map
+        // Compute hash ID of each node name, comparing to key hash ID
+        // Return 3 closest
+        // If this node is one of those, store
         StringBuilder value = new StringBuilder();
-        int valLines = Integer.parseInt(parts[2]);
-        for (int v = 0; v < valLines; v++) value.append(Node.readNextLine(in)).append('\n');
+        int valueLines = Integer.parseInt(parts[2]);
+        for (int v = 0; v < valueLines; v++) value.append(Node.readNextLine(in)).append('\n');
         keyValues.put(key.toString(), value.toString());
         Node.send(out, "SUCCESS");
 //        Node.send(out, "FAILED");
     }
 
     public void handleGet(String[] parts) {
-        StringBuilder key = new StringBuilder();
         int keyLines = Integer.parseInt(parts[1]);
+        StringBuilder key = new StringBuilder();
         for (int k = 0; k < keyLines; k++) key.append(Node.readNextLine(in)).append('\n');
         String value = keyValues.get(key.toString());
         if (value == null) Node.send(out, "NOPE");
@@ -127,7 +116,7 @@ public class FullNode implements FullNodeInterface {
     }
 
     public void handleEcho() {
-        System.err.println("ECHO not implemented");
+        Node.send(out, "OHCE");
     }
 
     public void handleNotify() {
@@ -136,5 +125,16 @@ public class FullNode implements FullNodeInterface {
 
     public void handleNearest() {
         System.err.println("NEAREST not implemented");
+    }
+
+    public void handleEnd(String reason) {
+        try {
+            started = false; // Break
+            clientSocket.close();
+            serverSocket.close();
+            System.err.println("Connection terminated.");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

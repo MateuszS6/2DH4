@@ -17,6 +17,8 @@ public class Node {
         String line;
         try {
             line = reader.readLine();
+            if (line.isEmpty()) line = "END";
+            System.out.println("Received: " + line);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

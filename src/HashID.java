@@ -12,7 +12,7 @@ public class HashID {
 		// TODO: test hashing
 	}
 
-    public static byte [] computeHashID(String line) throws Exception {
+    public static byte[] computeHashID(String line) throws Exception {
 		if (line.endsWith("\n")) {
 	    	// What this does and how it works is covered in a later lecture
 	    	MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -22,5 +22,10 @@ public class HashID {
 	    	// 2D#4 computes hashIDs of lines, i.e. strings ending with '\n'
 	    	throw new Exception("No new line at the end of input to HashID");
 		}
+    }
+
+	public static String bytesToHex(byte[] bytes) {
+
+        return null;
     }
 }

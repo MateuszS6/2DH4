@@ -39,7 +39,6 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
     public boolean start(String startingNodeName, String startingNodeAddress) {
         try {
-
             // Split the address and open a client socket
             String[] addressParts = startingNodeAddress.split(":");
             socket = new Socket(addressParts[0], Integer.parseInt(addressParts[1]));
@@ -50,44 +49,42 @@ public class TemporaryNode implements TemporaryNodeInterface {
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
             // Create and send a START request
-            String request = "START" + 1 + startingNodeName;
+            String request = "START 1 " + startingNodeName;
             Node.send(out, request);
 
             // Receive and check the response
-            String response = Node.readNextLine(in);
-            System.out.println("Received: " + response); // START... (same as sent) -> worked
-            if (response.equals(request)) return true; // 2D#4 network can be contacted
-            else {
+            String response = Node.readNextLine(in); // START... (same as sent) -> worked
+            if (!response.equals(request)) {
                 socket.close();
-                if (response.equals("END")) throw new IOException("Connection ENDED.");
-                else throw new IOException("Unexpected response.");
+                if (response.equals("END")) System.err.println("Connection ENDED.");
+                else System.err.println("Unexpected response.");
+                return false; // 2D#4 network can't be contacted
             }
 
+            return true; // 2D#4 network can be contacted
         } catch (IOException e) {
-            System.err.println(e.getMessage());
-            return false; // 2D#4 network can't be contacted
+            throw new RuntimeException(e);
         }
     }
 
     public boolean store(String key, String value) {
-
         // Split the key and value into individual words
         String[] keyParts = key.split("\n");
-        if (keyParts.length < 1) System.err.println("Blank key entered");
+        if (keyParts.length < 1) System.err.println("Blank key entered.");
         String[] valueParts = value.split("\n");
-        if (valueParts.length < 1) System.err.println("Blank value entered");
+        if (valueParts.length < 1) System.err.println("Blank value entered.");
 
-        // Format and send the PUT request with new lines for each word
+        // Send PUT request
         Node.send(out, "PUT? " + keyParts.length + ' ' + valueParts.length + '\n' + key + value);
 
         // Receive and check the response
         String response = Node.readNextLine(in);
-        System.out.println("Received: " + response);
-        if (response.equals("SUCCESS")) return true; // SUCCESS -> worked
-        else if (response.equals("FAILED")) return false; // FAILED -> failed
-        else System.err.println("Unexpected response: " + response);
+        if (!response.equals("SUCCESS")) {
+            if (response.equals("FAILED")) System.err.println("Not implemented.");
+            else System.err.println("Unexpected response."); // TODO: END
+        } else return true; // SUCCESS -> worked
 
-        return false;
+        return false; // FAILED -> failed
     }
 
     public String get(String key) {
@@ -95,24 +92,39 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
         // Split the key into individual words
         String[] keyParts = key.split("\n");
-        if (keyParts.length < 1) System.err.println("Empty key entered");
+        if (keyParts.length < 1) System.err.println("Empty key entered.");
 
-        // Format and send the GET request
+        // Send GET request
         Node.send(out, "GET? " + keyParts.length + '\n' + key);
 
         // Receive and check the response
         String response = Node.readNextLine(in);
-        System.out.println("Received: " + response);
-        if (response.startsWith("VALUE")) { // VALUE... -> worked
-            String[] responseParts = response.split(" ");
-            int valLines = Integer.parseInt(responseParts[1]);
-            StringBuilder getVal = new StringBuilder();
-            for (int v = 0; v < valLines; v++) getVal.append(Node.readNextLine(in)).append('\n');
-            value = getVal.toString();
-        } else if (response.equals("NOPE")) System.out.println(response); // NOPE -> failed
-        else System.err.println("Unexpected response: " + response);
-        // TODO: Unexpected response -> END
+        if (!response.startsWith("VALUE")) {
+            if (response.equals("NOPE")) System.err.println("Not implemented."); // TODO: Find next closest nodes
+            else System.err.println("Unexpected response."); // TODO: END
+        } else {
+            int valueLines = Integer.parseInt(response.split(" ")[1]);
+            StringBuilder valueBuilder = new StringBuilder();
+            for (int v = 0; v < valueLines; v++) valueBuilder.append(Node.readNextLine(in)).append('\n');
+            value = valueBuilder.toString();
+        }
 
-        return value; // The GET worked/failed
+        return value;
     }
+
+//    public String findClosestNode(String hashID) {
+//        String node;
+//
+//        Node.send(out, "NEAREST? " + hashID);
+//        String response = Node.readNextLine(in);
+//        if (!response.startsWith("NODES")) System.err.println("Unexpected response."); // TODO: END
+//        else {
+//            int nodes = response.split(" ").length;
+//            for (int n = 0; n < nodes; n++) {
+//
+//            }
+//        }
+//
+//        return node;
+//    }
 }
