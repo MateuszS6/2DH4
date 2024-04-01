@@ -10,8 +10,9 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.TreeMap;
+import java.util.List;
 
 // DO NOT EDIT starts
 interface FullNodeInterface {
@@ -26,8 +27,10 @@ public class FullNode implements FullNodeInterface {
     private Socket clientSocket;
     private BufferedReader in;
     private BufferedWriter out;
+    private String name;
+    private String address;
     private boolean started = false;
-    private HashMap<Integer, String[]> network = new HashMap<>();
+    private HashMap<Integer, List<String>> network = new HashMap<>();
     private HashMap<String, String> keyValues = new HashMap<>();
 
     public static void main(String[] args) {
@@ -50,7 +53,12 @@ public class FullNode implements FullNodeInterface {
     }
     
     public void handleIncomingConnections(String startingNodeName, String startingNodeAddress) {
-	    // Implement this!
+        name = startingNodeName;
+        address = startingNodeAddress;
+        for (int d = 0; d < 257; d++) network.put(d, new ArrayList<>(3));
+        addToNetwork(name, address);
+        System.out.println(network);
+
         try {
             clientSocket = serverSocket.accept();
             System.out.println(" --- Connected!");
@@ -59,41 +67,50 @@ public class FullNode implements FullNodeInterface {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 
-            if (!started) handleStart(startingNodeName);
+            if (!started) {
+                handleStart();
+                notifyInfo();
+            }
             while (started) {
                 // Read and split first line of request
                 String request = Node.readNextLine(in);
                 String[] requestParts = request.split(" ");
-                String requestWord = requestParts[0]; // Request command
+                String command = requestParts[0];
 
-                if (requestWord.equals("PUT?")) handleStore(requestParts, startingNodeName);
-                else if (requestWord.equals("GET?")) handleGet(requestParts);
-                else if (requestWord.equals("ECHO?")) handleEcho();
-                else if (requestWord.equals("NOTIFY?")) handleNotify();
-                else if (requestWord.equals("NEAREST?")) handleNearest();
-                else if (requestWord.equals("END")) handleEnd(request.substring(4));
-                else handleEnd("Unexpected request.");
+                if (command.equals("PUT?")) handlePut(requestParts);
+                else if (command.equals("GET?")) handleGet(requestParts);
+                else if (command.equals("ECHO?")) handleEcho();
+                else if (command.equals("NOTIFY?")) handleNotify();
+                else if (command.equals("NEAREST?")) handleNearest(requestParts[2]);
+                else if (command.equals("END")) handleEnd();
+                else Node.end(out, "Unexpected request");
             }
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
     }
 
-    public void handleStart(String name) {
-        // TODO: Robustness
-        if (Node.readNextLine(in).startsWith("START")) {
-            // TODO: Implement NOTIFY?
-            Node.send(out, "START 1 " + name);
-            started = true;
-        } else Node.send(out, "END Invalid START request");
+    public void addToNetwork(String nodeName, String nodeAddress) {
+        int distance = HashID.calculateDistance(name, nodeName);
+        network.get(distance).add(nodeName + ' ' + nodeAddress);
     }
 
-    public void handleStore(String[] parts, String name) {
+    public void handleStart() {
+        // TODO: Robustness
+        if (Node.readNextLine(in).startsWith("START")) {
+            Node.send(out, "START 1 " + name);
+            started = true;
+        } else Node.end(out, "Unexpected request");
+    }
+
+    public void handlePut(String[] parts) {
         // TODO: Implement NEAREST? check
         StringBuilder key = new StringBuilder();
         int keyLines = Integer.parseInt(parts[1]);
         for (int k = 0; k < keyLines; k++) key.append(Node.readNextLine(in)).append('\n');
-//        String keyHashID = HashID.bytesToHex(HashID.computeHashID(key.toString()));
+        String keyHashID = HashID.generate(key.toString());
+        System.out.println(keyHashID);
+        handleNearest(keyHashID);
         // Loop through network map
         // Compute hash ID of each node name, comparing to key hash ID
         // Return 3 closest
@@ -119,17 +136,37 @@ public class FullNode implements FullNodeInterface {
         Node.send(out, "OHCE");
     }
 
+    public void notifyInfo() {
+        Node.send(out, "NOTIFY?\n" + name + '\n' + address);
+        if (!Node.readNextLine(in).equals("NOTIFIED")) Node.end(out, "Unexpected request");
+    }
+
     public void handleNotify() {
-        System.err.println("NOTIFY? not implemented");
+        String nodeName = Node.readNextLine(in);
+        String nodeAddress = Node.readNextLine(in);
+        addToNetwork(nodeName, nodeAddress);
+        Node.send(out, "NOTIFIED");
     }
 
-    public void handleNearest() {
-        System.err.println("NEAREST not implemented");
+    public void handleNearest(String hashID) {
+        // TODO: Implement
+//        for (Map.Entry<Integer, List<String>> entry : network.entrySet()) {
+//            for (String node : entry.getValue()) {
+//
+//            }
+//        }
+        int nodeInfoLines = 3;
+        String node1 = "martin.brain@city.ac.uk:MyCoolImplementation,1.41,test-node-1\n10.0.0.4:2244";
+        String node2 = "martin.brain@city.ac.uk:MyCoolImplementation,1.67,test-node-7\n10.0.0.23:2400";
+        String node3 = "martin.brain@city.ac.uk:MyCoolImplementation,1.67,test-node-9\n10.0.0.96:35035";
+        Node.send(out, "NODES " + nodeInfoLines + '\n' + node1  + '\n' + node2 + '\n' + node3);
     }
 
-    public void handleEnd(String reason) {
+    public void handleEnd() {
         try {
             started = false; // Break
+            in.close();
+            out.close();
             clientSocket.close();
             serverSocket.close();
             System.err.println("Connection terminated.");

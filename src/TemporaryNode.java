@@ -56,10 +56,11 @@ public class TemporaryNode implements TemporaryNodeInterface {
             String response = Node.readNextLine(in); // START... (same as sent) -> worked
             if (!response.equals(request)) {
                 socket.close();
-                if (response.equals("END")) System.err.println("Connection ENDED.");
-                else System.err.println("Unexpected response.");
+                if (response.equals("END")) handleEnd();
+                else Node.end(out, "Unexpected response");
                 return false; // 2D#4 network can't be contacted
             }
+            if (Node.readNextLine(in).startsWith("NOTIFY?")) Node.send(out, "NOTIFIED");
 
             return true; // 2D#4 network can be contacted
         } catch (IOException e) {
@@ -74,6 +75,8 @@ public class TemporaryNode implements TemporaryNodeInterface {
         String[] valueParts = value.split("\n");
         if (valueParts.length < 1) System.err.println("Blank value entered.");
 
+//        String closestNode = findClosestNode(key);
+
         // Send PUT request
         Node.send(out, "PUT? " + keyParts.length + ' ' + valueParts.length + '\n' + key + value);
 
@@ -81,7 +84,8 @@ public class TemporaryNode implements TemporaryNodeInterface {
         String response = Node.readNextLine(in);
         if (!response.equals("SUCCESS")) {
             if (response.equals("FAILED")) System.err.println("Not implemented.");
-            else System.err.println("Unexpected response."); // TODO: END
+            else if (response.equals("END")) handleEnd();
+            else Node.end(out, "Unexpected response");
         } else return true; // SUCCESS -> worked
 
         return false; // FAILED -> failed
@@ -101,7 +105,8 @@ public class TemporaryNode implements TemporaryNodeInterface {
         String response = Node.readNextLine(in);
         if (!response.startsWith("VALUE")) {
             if (response.equals("NOPE")) System.err.println("Not implemented."); // TODO: Find next closest nodes
-            else System.err.println("Unexpected response."); // TODO: END
+            else if (response.equals("END")) handleEnd();
+            else Node.end(out, "Unexpected response");
         } else {
             int valueLines = Integer.parseInt(response.split(" ")[1]);
             StringBuilder valueBuilder = new StringBuilder();
@@ -112,19 +117,32 @@ public class TemporaryNode implements TemporaryNodeInterface {
         return value;
     }
 
-//    public String findClosestNode(String hashID) {
-//        String node;
-//
-//        Node.send(out, "NEAREST? " + hashID);
-//        String response = Node.readNextLine(in);
-//        if (!response.startsWith("NODES")) System.err.println("Unexpected response."); // TODO: END
-//        else {
-//            int nodes = response.split(" ").length;
-//            for (int n = 0; n < nodes; n++) {
-//
-//            }
-//        }
-//
-//        return node;
-//    }
+    public void handleEnd() {
+        try {
+            in.close();
+            out.close();
+            socket.close();
+            System.err.println("Connection terminated.");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String findClosestNode(String string) {
+        String[] nodes = Node.nearest(in, out, HashID.generate(string));
+        String closest = nodes[0];
+        if (nodes.length > 1) {
+            String nodeName = closest.split(" ")[0];
+            int lowestDistance = HashID.calculateDistance(string, nodeName);
+            for (int i = 1; i < nodes.length; i++) {
+                nodeName = nodes[i].split(" ")[0];
+                int distance = HashID.calculateDistance(string, nodeName);
+                if (distance < lowestDistance) {
+                    lowestDistance = distance;
+                    closest = nodes[i];
+                }
+            }
+        }
+        return closest;
+    }
 }
