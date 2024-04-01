@@ -10,7 +10,7 @@ public class Node {
             else writer.write(string);
             writer.flush();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println(e.getMessage());
         }
     }
 
@@ -18,10 +18,10 @@ public class Node {
         String line;
         try {
             line = reader.readLine();
-            if (line.isEmpty()) line = "END";
             System.out.println("Received: " + line);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println(e.getMessage());
+            return "END";
         }
         return line;
     }

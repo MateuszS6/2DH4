@@ -55,16 +55,17 @@ public class TemporaryNode implements TemporaryNodeInterface {
             // Receive and check the response
             String response = Node.readNextLine(in); // START... (same as sent) -> worked
             if (!response.equals(request)) {
-                socket.close();
                 if (response.equals("END")) handleEnd();
                 else Node.end(out, "Unexpected response");
                 return false; // 2D#4 network can't be contacted
             }
-            if (Node.readNextLine(in).startsWith("NOTIFY?")) Node.send(out, "NOTIFIED");
+            Node.send(out, "NOTIFY?\n" + startingNodeName + '\n' + startingNodeAddress);
+            if (!Node.readNextLine(in).equals("NOTIFIED")) Node.end(out, "Unexpected request");
 
             return true; // 2D#4 network can be contacted
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println(e.getMessage());
+            return false;
         }
     }
 

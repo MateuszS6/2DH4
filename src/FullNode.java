@@ -57,7 +57,7 @@ public class FullNode implements FullNodeInterface {
         address = startingNodeAddress;
         for (int d = 0; d < 257; d++) network.put(d, new ArrayList<>(3));
         addToNetwork(name, address);
-        System.out.println(network);
+        addToNetwork("mateusz.stepien@city.ac.uk:test", "127.0.0.1:2345");
 
         try {
             clientSocket = serverSocket.accept();
@@ -69,7 +69,6 @@ public class FullNode implements FullNodeInterface {
 
             if (!started) {
                 handleStart();
-                notifyInfo();
             }
             while (started) {
                 // Read and split first line of request
@@ -93,6 +92,7 @@ public class FullNode implements FullNodeInterface {
     public void addToNetwork(String nodeName, String nodeAddress) {
         int distance = HashID.calculateDistance(name, nodeName);
         network.get(distance).add(nodeName + ' ' + nodeAddress);
+        System.out.println(distance + " -> " + network.get(distance));
     }
 
     public void handleStart() {
@@ -110,7 +110,7 @@ public class FullNode implements FullNodeInterface {
         for (int k = 0; k < keyLines; k++) key.append(Node.readNextLine(in)).append('\n');
         String keyHashID = HashID.generate(key.toString());
         System.out.println(keyHashID);
-        handleNearest(keyHashID);
+//        handleNearest(keyHashID);
         // Loop through network map
         // Compute hash ID of each node name, comparing to key hash ID
         // Return 3 closest
