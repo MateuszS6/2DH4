@@ -9,13 +9,13 @@ import java.security.MessageDigest;
 
 public class HashID {
 	public static void main(String[] args) {
-//		String s1 = "Hello World!";
-//		String s2 = "martin.brain@city.ac.uk:MyCoolImplementation,1.41,test-node-2";
-//		System.out.println(s1 + "\n\t> " + generate(s1));
-//		System.out.println(s2 + "\n\t> " + generate(s2));
-//		String h1 = "0f033be6cea034bd45a0352775a219ef5dc7825ce55d1f7dae9762d80ce64411";
-//		String h2 = "0f0139b167bb7b4a416b8f6a7e0daa7e24a08172b9892171e5fdc615bb7f999b";
-//		System.out.println(h1 + '\n' + h2 + "\n\t> Distance: " + calculateDistance(h1, h2));
+		String s1 = "Hello World!";
+		String s2 = "martin.brain@city.ac.uk:MyCoolImplementation,1.41,test-node-2";
+		System.out.println(s1 + "\n\t> " + generate(s1));
+		System.out.println(s2 + "\n\t> " + generate(s2));
+		String h1 = "0f033be6cea034bd45a0352775a219ef5dc7825ce55d1f7dae9762d80ce64411";
+		String h2 = "0f0139b167bb7b4a416b8f6a7e0daa7e24a08172b9892171e5fdc615bb7f999b";
+		System.out.println(h1 + '\n' + h2 + "\n\t> Distance: " + calculateDistance(h1, h2));
 
 		// TODO: Test anything
 	}
