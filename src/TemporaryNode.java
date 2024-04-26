@@ -10,9 +10,7 @@
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 // DO NOT EDIT starts
 interface TemporaryNodeInterface {
@@ -29,7 +27,6 @@ public class TemporaryNode implements TemporaryNodeInterface {
     private BufferedWriter out;
     private String currentFullNodeName;
     private String currentFullNodeAddress;
-    private final Map<String, Socket> connections = new HashMap<>();
 
     public static void main(String[] args) {
         TemporaryNode client = new TemporaryNode();
@@ -59,12 +56,10 @@ public class TemporaryNode implements TemporaryNodeInterface {
             // Send a request and check the response
             String response = Node.sendStartRequest(in, out, startingNodeName);
             if (response.startsWith("START")) {
-                // Add to known nodes
-//            connections.put(nodeAddress, socket);
                 System.out.println(" --- Connected!");
                 return true; // 2D#4 network can be contacted
             } else {
-                if (response.equals("END")) handleEnd();
+                if (response.startsWith("END")) close(response);
                 else Node.sendEndRequest(out, "Unexpected response");
                 return false; // 2D#4 network can't be contacted
             }
@@ -72,18 +67,34 @@ public class TemporaryNode implements TemporaryNodeInterface {
             System.err.println(e.getMessage());
             return false;
         }
-
-//        Node.send(out, "NOTIFY?\n" + startingNodeName + '\n' + startingNodeAddress);
-//        if (!Node.readNextLine(in).equals("NOTIFIED")) Node.end(out, "Unexpected request");
     }
 
     public boolean store(String key, String value) {
         // Send a request and check the response
         String response = Node.sendPutRequest(in, out, key, value);
+
+        if (response.equals("FAILED")) {
+            List<FullNodeInfo> visitedNodes = new ArrayList<>();
+            while (response.equals("FAILED")) {
+                List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
+                boolean found = false;
+                for (FullNodeInfo nodeInfo : nodes) {
+                    if (!visitedNodes.contains(nodeInfo)) {
+                        if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
+                            response = Node.sendPutRequest(in, out, key, value);
+                            visitedNodes.add(nodeInfo);
+                            if (response.startsWith("SUCCESS")) found = true;
+                            break;
+                        }
+                    }
+                }
+                if (found) break; // Exit the loop if the value is found
+            }
+        }
+
         if (response.equals("SUCCESS")) return true; // SUCCESS -> worked
         else {
-            if (response.equals("FAILED")) System.err.println("Not implemented.");
-            else if (response.equals("END")) handleEnd();
+            if (response.startsWith("END")) close(response);
             else Node.sendEndRequest(out, "Unexpected response");
         }
         return false; // FAILED -> failed
@@ -91,27 +102,28 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
     public String get(String key) {
         String value = null; // Return null if the GET failed
-        List<FullNodeInfo> visitedNodes = new ArrayList<>();
 
         // Send a request and check the response
         String response = Node.sendGetRequest(in, out, key);
-        while (response.startsWith("NOPE")) {
-            List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
-            boolean found = false;
-            for (FullNodeInfo nodeInfo : nodes) {
-                if (!visitedNodes.contains(nodeInfo)) {
-                    if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
-                        response = Node.sendGetRequest(in, out, key);
-                        visitedNodes.add(nodeInfo);
-                        if (response.startsWith("VALUE")) {
-                            found = true;
+        if (response.startsWith("NOPE")) {
+            List<FullNodeInfo> visitedNodes = new ArrayList<>();
+            while (response.startsWith("NOPE")) {
+                List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
+                boolean found = false;
+                for (FullNodeInfo nodeInfo : nodes) {
+                    if (!visitedNodes.contains(nodeInfo)) {
+                        if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
+                            response = Node.sendGetRequest(in, out, key);
+                            visitedNodes.add(nodeInfo);
+                            if (response.startsWith("VALUE")) found = true;
                             break;
                         }
                     }
                 }
+                if (found) break; // Exit the loop if the value is found
             }
-            if (found) break; // Exit the loop if the value is found
         }
+
         if (response.startsWith("VALUE")) {
             int valueLines = Integer.parseInt(response.split(" ")[1]);
             StringBuilder valueBuilder = new StringBuilder();
@@ -119,7 +131,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
                 valueBuilder.append(Node.readNextLine(in)).append('\n');
             value = valueBuilder.toString();
         } else {
-            if (response.equals("END")) handleEnd();
+            if (response.startsWith("END")) close(response);
             else Node.sendEndRequest(out, "Unexpected response");
         }
 
@@ -146,12 +158,13 @@ public class TemporaryNode implements TemporaryNodeInterface {
     }
     */
 
-    public void handleEnd() {
+    public void close(String message) {
         try {
             in.close();
             out.close();
             socket.close();
-            System.err.println("Connection terminated.");
+            String reason = message.split(" ")[1];
+            System.out.println("Connection terminated: " + reason);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
