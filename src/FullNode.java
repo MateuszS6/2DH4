@@ -104,7 +104,7 @@ public class FullNode implements FullNodeInterface {
         int nodesAtDistance = networkMap.get(distance).size();
         if (nodesAtDistance > 2) System.err.println("Max capacity reached at distance, adjusting...");
         while (nodesAtDistance > 2) {
-            networkMap.get(distance).removeFirst();
+            networkMap.get(distance).remove(0);
             nodesAtDistance = networkMap.get(distance).size();
         }
         networkMap.get(distance).add(newNodeInfo);
