@@ -20,11 +20,10 @@ public class Node {
         try {
             line = reader.readLine();
             System.out.println("Received: " + line);
+            return line;
         } catch (IOException e) {
-            System.err.println(e.getMessage());
-            return "END";
+            throw new RuntimeException(e);
         }
-        return line;
     }
 
     // Send START message
@@ -66,7 +65,7 @@ public class Node {
     }
 
     public static String sendNotifyRequest(BufferedReader in, BufferedWriter out, String nodeName, String nodeAddress) {
-        send(out, "NOTIFY?" + '\n' + nodeName + '\n' + nodeAddress);
+        send(out, "NOTIFY?\n" + nodeName + '\n' + nodeAddress);
         return readNextLine(in);
     }
 
