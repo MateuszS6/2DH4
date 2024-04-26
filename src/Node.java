@@ -70,6 +70,7 @@ public class Node {
     }
 
     public static List<FullNodeInfo> sendNearestRequest(BufferedReader in, BufferedWriter out, String hashID) {
+        System.out.println("HashID = " + hashID);
         List<FullNodeInfo> nodes = null;
         Node.send(out, "NEAREST? " + hashID);
         String response = Node.readNextLine(in);
@@ -83,7 +84,6 @@ public class Node {
                 String nodeAddress = readNextLine(in);
                 nodes.add(new FullNodeInfo(nodeName, nodeAddress));
             }
-            System.out.println(nodes);
         } else {
             System.err.println("Unexpected response."); // TODO: END
         }
