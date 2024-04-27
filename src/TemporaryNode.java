@@ -71,7 +71,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
         if (response.equals("FAILED")) {
             List<FullNodeInfo> visitedNodes = new ArrayList<>();
-            System.out.println("Trying 30 nodes until store failed");
+            System.out.println("Trying " + Node.TRY_LIMIT + " nodes until store failed");
             while (response.equals("FAILED")) {
                 List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
                 boolean worked = false;
@@ -86,8 +86,9 @@ public class TemporaryNode implements TemporaryNodeInterface {
                     }
                 }
                 // Exit the loop if the store worked or 30 nodes visited
-                if (worked || visitedNodes.size() > 30) {
-                    if (visitedNodes.size() > 30) System.out.println("Visited 30 nodes and store failed");
+                if (worked || visitedNodes.size() > Node.TRY_LIMIT) {
+                    if (visitedNodes.size() > Node.TRY_LIMIT)
+                        System.out.println("Store failed after " + Node.TRY_LIMIT + " tries.");
                     break;
                 }
             }
@@ -108,7 +109,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
         String response = Node.sendGetRequest(in, out, key);
         if (response.startsWith("NOPE")) {
             List<FullNodeInfo> visitedNodes = new ArrayList<>();
-            System.out.println("Trying 30 nodes until value not found");
+            System.out.println("Trying " + Node.TRY_LIMIT + " nodes until value not found");
             while (response.startsWith("NOPE")) {
                 List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
                 boolean found = false;
@@ -123,8 +124,9 @@ public class TemporaryNode implements TemporaryNodeInterface {
                     }
                 }
                 // Exit the loop if the value is found or 30 nodes visited
-                if (found || visitedNodes.size() > 30) {
-                    if (visitedNodes.size() > 30) System.out.println("Visited 30 nodes and value not found");
+                if (found || visitedNodes.size() > Node.TRY_LIMIT) {
+                    if (visitedNodes.size() > Node.TRY_LIMIT)
+                        System.out.println("Value not found after " + Node.TRY_LIMIT + " tries");
                     break;
                 }
             }

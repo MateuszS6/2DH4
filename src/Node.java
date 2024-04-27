@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Node {
+    public static final int TRY_LIMIT = 15;
+
     public static void send(BufferedWriter writer, String string) {
         try {
             if (!string.endsWith("\n")) writer.write(string + '\n');
