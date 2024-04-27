@@ -25,8 +25,6 @@ public class TemporaryNode implements TemporaryNodeInterface {
     private Socket socket;
     private BufferedReader in;
     private BufferedWriter out;
-    private String currentFullNodeName;
-    private String currentFullNodeAddress;
 
     public static void main(String[] args) {
         TemporaryNode client = new TemporaryNode();
@@ -50,8 +48,6 @@ public class TemporaryNode implements TemporaryNodeInterface {
             socket = new Socket(addressParts[0], Integer.parseInt(addressParts[1]));
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            currentFullNodeName = startingNodeName;
-            currentFullNodeAddress = startingNodeAddress;
 
             // Send a request and check the response
             String response = Node.sendStartRequest(in, out, startingNodeName);
@@ -75,20 +71,25 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
         if (response.equals("FAILED")) {
             List<FullNodeInfo> visitedNodes = new ArrayList<>();
+            System.out.println("Trying 30 nodes until store failed");
             while (response.equals("FAILED")) {
                 List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
-                boolean found = false;
+                boolean worked = false;
                 for (FullNodeInfo nodeInfo : nodes) {
                     if (!visitedNodes.contains(nodeInfo)) {
                         if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
                             response = Node.sendPutRequest(in, out, key, value);
                             visitedNodes.add(nodeInfo);
-                            if (response.startsWith("SUCCESS")) found = true;
+                            if (response.startsWith("SUCCESS")) worked = true;
                             break;
                         }
                     }
                 }
-                if (found) break; // Exit the loop if the value is found
+                // Exit the loop if the store worked or 30 nodes visited
+                if (worked || visitedNodes.size() > 30) {
+                    if (visitedNodes.size() > 30) System.out.println("Visited 30 nodes and store failed");
+                    break;
+                }
             }
         }
 
@@ -107,6 +108,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
         String response = Node.sendGetRequest(in, out, key);
         if (response.startsWith("NOPE")) {
             List<FullNodeInfo> visitedNodes = new ArrayList<>();
+            System.out.println("Trying 30 nodes until value not found");
             while (response.startsWith("NOPE")) {
                 List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
                 boolean found = false;
@@ -120,7 +122,11 @@ public class TemporaryNode implements TemporaryNodeInterface {
                         }
                     }
                 }
-                if (found) break; // Exit the loop if the value is found
+                // Exit the loop if the value is found or 30 nodes visited
+                if (found || visitedNodes.size() > 30) {
+                    if (visitedNodes.size() > 30) System.out.println("Visited 30 nodes and value not found");
+                    break;
+                }
             }
         }
 
@@ -137,26 +143,6 @@ public class TemporaryNode implements TemporaryNodeInterface {
 
         return value;
     }
-
-    /*
-    public String findClosestNode(String key) {
-        String[] nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
-        String closest = nodes[0];
-        if (nodes.length > 1) {
-            String nodeName = closest.split(" ")[0];
-            int lowestDistance = HashID.calculateDistance(key, nodeName);
-            for (int i = 1; i < nodes.length; i++) {
-                nodeName = nodes[i].split(" ")[0];
-                int distance = HashID.calculateDistance(key, nodeName);
-                if (distance < lowestDistance) {
-                    lowestDistance = distance;
-                    closest = nodes[i];
-                }
-            }
-        }
-        return closest;
-    }
-    */
 
     public void close(String message) {
         try {

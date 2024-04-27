@@ -147,7 +147,6 @@ public class FullNode implements FullNodeInterface {
         int keyLines = Integer.parseInt(parts[1]);
         for (int k = 0; k < keyLines; k++) key.append(Node.readNextLine(in)).append('\n');
         String keyHashID = HashID.generate(key.toString());
-//        System.out.println(keyHashID);
 
         // Check if this node one of the nearest nodes to the hash ID
         if (getNearestNodes(keyHashID).contains(info)) {
