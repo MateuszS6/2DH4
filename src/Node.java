@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Node {
@@ -12,6 +13,7 @@ public class Node {
             if (!string.endsWith("\n")) writer.write(string + '\n');
             else writer.write(string);
             writer.flush();
+            System.out.println("Sent: " + Arrays.toString(string.split("\n")));
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
@@ -24,7 +26,8 @@ public class Node {
             System.out.println("Received: " + line);
             return line;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println(e.getMessage());
+            return null;
         }
     }
 
@@ -72,12 +75,11 @@ public class Node {
     }
 
     public static List<FullNodeInfo> sendNearestRequest(BufferedReader in, BufferedWriter out, String hashID) {
-        System.out.println("HashID = " + hashID);
-        List<FullNodeInfo> nodes = null;
         Node.send(out, "NEAREST? " + hashID);
         String response = Node.readNextLine(in);
 
         // Check the response
+        List<FullNodeInfo> nodes = null;
         if (response.startsWith("NODES")) {
             int nodeCount = Integer.parseInt(response.split(" ")[1]);
             nodes = new ArrayList<>(nodeCount);
@@ -86,9 +88,7 @@ public class Node {
                 String nodeAddress = readNextLine(in);
                 nodes.add(new FullNodeInfo(nodeName, nodeAddress));
             }
-        } else {
-            System.err.println("Unexpected response."); // TODO: END
-        }
+        } else sendEndRequest(out, "Unexpected response.");
         return nodes;
     }
 }

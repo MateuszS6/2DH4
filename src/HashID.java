@@ -18,7 +18,7 @@ public class HashID {
 //		System.out.println(h1 + '\n' + h2 + "\n\t> Distance: " + calculateDistance(h1, h2));
 
 		// TODO: Test anything
-		System.out.println(generate("test/jabberwocky/4\n\n\n"));
+		generate("Welcome");
 	}
 
     public static byte[] computeHashID(String line) throws Exception {

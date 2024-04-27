@@ -61,8 +61,8 @@ public class TemporaryNode implements TemporaryNodeInterface {
             }
         } catch (IOException e) {
             System.err.println(e.getMessage());
-            return false;
         }
+        return false;
     }
 
     public boolean store(String key, String value) {
@@ -93,7 +93,6 @@ public class TemporaryNode implements TemporaryNodeInterface {
                 }
             }
         }
-
         if (response.equals("SUCCESS")) return true; // SUCCESS -> worked
         else {
             if (response.startsWith("END")) close(response);
@@ -113,16 +112,13 @@ public class TemporaryNode implements TemporaryNodeInterface {
             while (response.startsWith("NOPE")) {
                 List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
                 boolean found = false;
-                for (FullNodeInfo nodeInfo : nodes) {
-                    if (!visitedNodes.contains(nodeInfo)) {
-                        if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
-                            response = Node.sendGetRequest(in, out, key);
-                            visitedNodes.add(nodeInfo);
-                            if (response.startsWith("VALUE")) found = true;
-                            break;
-                        }
+                for (FullNodeInfo nodeInfo : nodes)
+                    if (!visitedNodes.contains(nodeInfo)) if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
+                        response = Node.sendGetRequest(in, out, key);
+                        visitedNodes.add(nodeInfo);
+                        if (response.startsWith("VALUE")) found = true;
+                        break;
                     }
-                }
                 // Exit the loop if the value is found or 30 nodes visited
                 if (found || visitedNodes.size() > Node.TRY_LIMIT) {
                     if (visitedNodes.size() > Node.TRY_LIMIT)
@@ -131,7 +127,6 @@ public class TemporaryNode implements TemporaryNodeInterface {
                 }
             }
         }
-
         if (response.startsWith("VALUE")) {
             int valueLines = Integer.parseInt(response.split(" ")[1]);
             StringBuilder valueBuilder = new StringBuilder();
@@ -152,7 +147,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
             out.close();
             socket.close();
             String reason = message.split(" ")[1];
-            System.out.println("Connection terminated: " + reason);
+            System.out.println("Communication ended: " + reason);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
