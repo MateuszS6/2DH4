@@ -53,48 +53,39 @@ public class FullNode implements FullNodeInterface {
         setupNodeInfo(startingNodeName, startingNodeAddress);
         prepareNetworkMap();
 
-        // Accept client and process requests
-        processRequests();
-    }
-
-    private void notifyOtherNodes(String startingNodeAddress) {
-        if (notifyCurrentNode(startingNodeAddress)) {
-            List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, info.getName());
-            for (FullNodeInfo node : nodes) notifyCurrentNode(node.getAddress());
-        }
-    }
-
-    private void processRequests() {
+        // Accept client and initialise communication streams
         try {
             clientSocket = serverSocket.accept();
             System.out.println(" --- Client connected!");
-
-            // Create the reader and writer
             initialiseCommunicationStreams(clientSocket);
-
-            if (!communicationStarted) handleStart();
-            if (notifyCurrentNode(null)) System.out.println("Notify worked!");;
-            while (communicationStarted) {
-                // Read and split first line of request
-                String request = Node.readNextLine(in);
-                if (request == null) {
-                    disconnectCurrentNode("Empty line received");
-                    break;
-                } else if (request.isEmpty() || request.isBlank()) handleNoneRequest();
-
-                // Get the parts of the request
-                String[] requestParts = request.split(" ");
-
-                if (request.startsWith("PUT?") && requestParts.length == 3) handlePut(requestParts);
-                else if (request.startsWith("GET?") && requestParts.length == 2) handleGet(requestParts);
-                else if (request.startsWith("ECHO?") && requestParts.length == 1) handleEcho();
-                else if (request.startsWith("NOTIFY?") && requestParts.length == 1) handleNotify();
-                else if (request.startsWith("NEAREST?") && requestParts.length == 2) handleNearest(requestParts);
-                else if (request.startsWith("END") && requestParts.length == 2) close();
-                else disconnectCurrentNode("Unexpected request: " + request);
-            }
         } catch (IOException e) {
             System.err.println(e.getMessage());
+        }
+
+        // Process requests from connected client
+        processRequests();
+    }
+
+    private void processRequests() {
+        if (!communicationStarted) handleStart();
+        while (communicationStarted) {
+            // Read and split first line of request
+            String request = Node.readNextLine(in);
+            if (request == null) {
+                disconnectCurrentNode("Empty line received");
+                break;
+            } else if (request.isEmpty() || request.isBlank()) handleNoneRequest();
+
+            // Get the parts of the request
+            String[] requestParts = request.split(" ");
+
+            if (request.startsWith("PUT?") && requestParts.length == 3) handlePut(requestParts);
+            else if (request.startsWith("GET?") && requestParts.length == 2) handleGet(requestParts);
+            else if (request.startsWith("ECHO?") && requestParts.length == 1) handleEcho();
+            else if (request.startsWith("NOTIFY?") && requestParts.length == 1) handleNotify();
+            else if (request.startsWith("NEAREST?") && requestParts.length == 2) handleNearest(requestParts);
+            else if (request.startsWith("END") && requestParts.length == 2) close();
+            else disconnectCurrentNode("Unexpected request: " + request);
         }
     }
 
@@ -139,25 +130,9 @@ public class FullNode implements FullNodeInterface {
         System.err.println("Node to remove not found in network map");
     }
 
-    private boolean startCommunication(String nodeAddress, int port) {
-        try (Socket socket = new Socket(nodeAddress, port)) {
-            initialiseCommunicationStreams(socket);
-            String response = Node.sendStartRequest(in, out, info.getName());
-            if (response != null && response.startsWith("START")) return true;
-        } catch (IOException e) {
-            System.err.println("Failed to connect to " + nodeAddress + ": " + e.getMessage());
-        }
-        return false;
-    }
-
-    private boolean notifyCurrentNode(String startingNodeAddress) {
-//        String nodeAddress = startingNodeAddress.split(":")[0];
-//        int port = Integer.parseInt(startingNodeAddress.split(":")[1]);
-//        if (startCommunication(nodeAddress, port)) {
-            String response = Node.sendNotifyRequest(in, out, info.getName(), info.getAddress());
-            return response.equals("NOTIFIED");
-//        }
-//        return false;
+    private boolean notifyCurrentNode() {
+        String response = Node.sendNotifyRequest(in, out, info.getName(), info.getAddress());
+        return response.equals("NOTIFIED");
     }
 
     private void handleStart() {
