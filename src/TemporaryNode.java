@@ -76,17 +76,19 @@ public class TemporaryNode implements TemporaryNodeInterface {
             while (response.equals("FAILED")) {
                 List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
                 boolean worked = false;
-                for (FullNodeInfo nodeInfo : nodes) {
-                    if (!visitedNodeNames.contains(nodeInfo.getName())) {
-                        if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
+                for (int n = 0; n < nodes.size(); n++) {
+                    String nodeName = nodes.get(n).getName();
+                    if (visitedNodeNames.contains(nodeName) && n == nodes.size() - 1) break;
+                    else {
+                        if (start(nodeName, nodes.get(n).getAddress())) {
                             response = Node.sendPutRequest(in, out, key, value);
-                            visitedNodeNames.add(nodeInfo.getName());
+                            visitedNodeNames.add(nodeName);
                             if (response.startsWith("SUCCESS")) worked = true;
                             break;
                         }
-                    } else break;
+                    }
                 }
-                // Exit the loop if the store worked or 30 nodes visited
+                // Exit the loop if the store worked or try limit reached
                 if (worked || visitedNodeNames.size() > tryLimit) {
                     if (visitedNodeNames.size() > tryLimit)
                         System.out.println("Store failed after " + tryLimit + " tries.");
@@ -113,16 +115,19 @@ public class TemporaryNode implements TemporaryNodeInterface {
             while (response.startsWith("NOPE")) {
                 List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
                 boolean found = false;
-                for (FullNodeInfo nodeInfo : nodes)
-                    if (!visitedNodeNames.contains(nodeInfo.getName())) {
-                        if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
+                for (int n = 0; n < nodes.size(); n++) {
+                    String nodeName = nodes.get(n).getName();
+                    if (visitedNodeNames.contains(nodeName) && n == nodes.size() - 1) break;
+                    else {
+                        if (start(nodeName, nodes.get(n).getAddress())) {
                             response = Node.sendGetRequest(in, out, key);
-                            visitedNodeNames.add(nodeInfo.getName());
+                            visitedNodeNames.add(nodeName);
                             if (response.startsWith("VALUE")) found = true;
                             break;
                         }
-                    } else break;
-                // Exit the loop if the value is found or 30 nodes visited
+                    }
+                }
+                // Exit the loop if the value is found or try limit reached
                 if (found || visitedNodeNames.size() > tryLimit) {
                     if (visitedNodeNames.size() > tryLimit)
                         System.out.println("Value not found after " + tryLimit + " tries");
