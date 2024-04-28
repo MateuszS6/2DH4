@@ -67,7 +67,7 @@ public class FullNode implements FullNodeInterface {
                 if (request == null) {
                     disconnectCurrentNode(null);
                     break;
-                } else if (request.isEmpty() || request.isBlank()) handleNoneRequest();
+                }
 
                 // Get the parts of the request
                 String[] requestParts = request.split(" ");
