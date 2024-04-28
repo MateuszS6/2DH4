@@ -143,11 +143,6 @@ public class FullNode implements FullNodeInterface {
         } else disconnectCurrentNode(message);
     }
 
-    private void handleNoneRequest() {
-        String response = Node.sendEchoMessage(in, out);
-        if (!response.equals("OHCE")) Node.sendEndRequest(out, "Node inactive, unexpected response");
-    }
-
     private void handlePut(String[] parts) {
         // Assemble the key
         StringBuilder key = new StringBuilder();
