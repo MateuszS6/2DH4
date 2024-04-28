@@ -26,9 +26,8 @@ public class FullNode implements FullNodeInterface {
     private BufferedReader in;
     private BufferedWriter out;
     private FullNodeInfo info;
-    private String connectedNodeName;
     private String connectedNodeAddress;
-    private boolean started = false;
+    private boolean communicationStarted = false;
     private final Map<Integer, List<FullNodeInfo>> networkMap = new HashMap<>();
     private final Map<String, String> keyValues = new HashMap<>();
 
@@ -51,39 +50,42 @@ public class FullNode implements FullNodeInterface {
     }
     
     public void handleIncomingConnections(String startingNodeName, String startingNodeAddress) {
-        info = new FullNodeInfo(startingNodeName, startingNodeAddress);
-        connectedNodeName = startingNodeName;
-        connectedNodeAddress = startingNodeAddress;
-        for (int d = 0; d < 257; d++) networkMap.put(d, new ArrayList<>(3));
-        addToNetworkMap(info);
-//        addToNetworkMap("mateusz.stepien@city.ac.uk:test", "127.0.0.1:2345");
-//        addToNetworkMap("martin.brain@city.ac.uk:MyCoolImplementation,1.41,test-node-1", "10.0.0.4:2244");
-//        addToNetworkMap("martin.brain@city.ac.uk:MyCoolImplementation,1.67,test-node-7", "10.0.0.23:2400");
-//        addToNetworkMap("martin.brain@city.ac.uk:MyCoolImplementation,1.67,test-node-9", "10.0.0.96:35035");
+        setupNodeInfo(startingNodeName, startingNodeAddress);
+        prepareNetworkMap();
 
-        // TODO: Search for full nodes and add to network when acting as client
-//        notifyInfo();
-//        List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(info.getName()));
-//        for (FullNodeInfo node : nodes) {
-//            Node.sendStartRequest(in, out, info.getName());
-//        }
+        // Notify other nodes of address
+        notifyOtherNodes(startingNodeAddress);
 
+        // Accept client and process requests
+        processRequests();
+    }
+
+    private void notifyOtherNodes(String startingNodeAddress) {
+        if (notifyCurrentNode(startingNodeAddress)) {
+            List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, info.getName());
+            for (FullNodeInfo node : nodes) notifyCurrentNode(node.getAddress());
+
+        }
+    }
+
+    private void processRequests() {
         try {
             clientSocket = serverSocket.accept();
-            System.out.println(" --- Connected!");
+            System.out.println(" --- Client connected!");
 
             // Create the reader and writer
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+            initialiseCommunicationStreams(clientSocket);
 
-            if (!started) handleStart();
-            while (started) {
+            if (!communicationStarted) handleStart();
+            while (communicationStarted) {
                 // Read and split first line of request
                 String request = Node.readNextLine(in);
                 if (request == null) {
                     disconnectCurrentNode("Empty line received");
                     break;
-                }
+                } else if (request.isEmpty() || request.isBlank()) handleNoneRequest();
+
+                // Get the parts of the request
                 String[] requestParts = request.split(" ");
 
                 if (request.startsWith("PUT?") && requestParts.length == 3) handlePut(requestParts);
@@ -99,23 +101,34 @@ public class FullNode implements FullNodeInterface {
         }
     }
 
-    public void addToNetworkMap(FullNodeInfo newNodeInfo) {
-        int distance = HashID.calculateDistance(info.getAddress(), newNodeInfo.getAddress());
-        int nodesAtDistance = networkMap.get(distance).size();
-        if (nodesAtDistance > 2) System.err.println("Max capacity reached at distance, adjusting...");
-        while (nodesAtDistance > 2) {
-            networkMap.get(distance).remove(0);
-            nodesAtDistance = networkMap.get(distance).size();
-        }
-        networkMap.get(distance).add(newNodeInfo);
-        System.out.println(newNodeInfo.getName() + " added at distance: " + distance + " -> " + networkMap.get(distance));
+    private void initialiseCommunicationStreams(Socket clientSocket) throws IOException {
+        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
     }
 
-    public void addToNetworkMap(String nodeName, String nodeAddress) {
+    private void setupNodeInfo(String name, String address) {
+        info = new FullNodeInfo(name, address);
+        connectedNodeAddress = address;
+    }
+
+    private void prepareNetworkMap() {
+        for (int d = 0; d < 257; d++) networkMap.put(d, new ArrayList<>(3));
+        addToNetworkMap(info);
+    }
+
+    private void addToNetworkMap(FullNodeInfo newNodeInfo) {
+        int distance = HashID.calculateDistance(info.getAddress(), newNodeInfo.getAddress());
+        if (networkMap.get(distance).size() > 2) System.err.println("Max capacity reached at distance, adjusting...");
+        while (networkMap.get(distance).size() > 2) networkMap.get(distance).remove(0);
+        networkMap.get(distance).add(newNodeInfo);
+        System.out.println("Added " + newNodeInfo.getName() + " at distance " + distance);
+    }
+
+    private void addToNetworkMap(String nodeName, String nodeAddress) {
         addToNetworkMap(new FullNodeInfo(nodeName, nodeAddress));
     }
 
-    public void removeFromNetworkMap(String nodeAddress) {
+    private void removeFromNetworkMap(String nodeAddress) {
         boolean found = false;
         for (Map.Entry<Integer, List<FullNodeInfo>> entry : networkMap.entrySet()) {
             for (FullNodeInfo nodeInfo : entry.getValue())
@@ -124,31 +137,57 @@ public class FullNode implements FullNodeInterface {
                     found = true;
                     break;
                 }
-            if (found) break;
+            if (found) return;
         }
-        if (!found) System.err.println("Node to remove not found in network map");
+        System.err.println("Node to remove not found in network map");
     }
 
-    public void handleStart() {
+    private boolean startCommunication(String nodeAddress, int port) {
+        try (Socket socket = new Socket(nodeAddress, port)) {
+            initialiseCommunicationStreams(socket);
+            String response = Node.sendStartRequest(in, out, info.getName());
+            if (response != null && response.startsWith("START")) return true;
+        } catch (IOException e) {
+            System.err.println("Failed to connect to " + nodeAddress + ": " + e.getMessage());
+        }
+        return false;
+    }
+
+    private boolean notifyCurrentNode(String startingNodeAddress) {
+        String nodeAddress = startingNodeAddress.split(":")[0];
+        int port = Integer.parseInt(startingNodeAddress.split(":")[1]);
+        if (startCommunication(nodeAddress, port)) {
+            String response = Node.sendNotifyRequest(in, out, info.getName(), info.getAddress());
+            return response.equals("NOTIFIED");
+        }
+        return false;
+    }
+
+    private void handleStart() {
         String message = Node.readNextLine(in);
-        if (message.startsWith("START")) {
+        if (message != null && message.startsWith("START")) {
             String[] parts = message.split(" ");
             if (parts.length == 3) if (parts[2].contains(":")) {
                 Node.send(out, "START " + 1 + ' ' + info.getName());
-                started = true;
+                communicationStarted = true;
             } else disconnectCurrentNode("Colon must separate the node name and address");
             else disconnectCurrentNode("Request must have three parts");
         } else disconnectCurrentNode("Unexpected request");
     }
 
-    public void handlePut(String[] parts) {
-        // Assemble the key and generate a hash ID
+    private void handleNoneRequest() {
+        String response = Node.sendEchoMessage(in, out);
+        if (!response.equals("OHCE")) Node.sendEndRequest(out, "Node inactive, unexpected response");
+    }
+
+    private void handlePut(String[] parts) {
+        // Assemble the key
         StringBuilder key = new StringBuilder();
         int keyLines = Integer.parseInt(parts[1]);
         for (int k = 0; k < keyLines; k++) key.append(Node.readNextLine(in)).append('\n');
-        String keyHashID = HashID.generate(key.toString());
 
-        // Check if this node one of the nearest nodes to the hash ID
+        // Check if this node one of the nearest nodes to the generated hash ID
+        String keyHashID = HashID.generate(key.toString());
         if (getNearestNodes(keyHashID).contains(info)) {
             // Assemble the value and store
             StringBuilder value = new StringBuilder();
@@ -159,33 +198,30 @@ public class FullNode implements FullNodeInterface {
         } else Node.send(out, "FAILED"); // Node is not one of the nearest
     }
 
-    public void handleGet(String[] parts) {
+    private void handleGet(String[] parts) {
+        // Assemble and get the value
         int keyLines = Integer.parseInt(parts[1]);
         StringBuilder key = new StringBuilder();
         for (int k = 0; k < keyLines; k++) key.append(Node.readNextLine(in)).append('\n');
         String value = keyValues.get(key.toString());
 
+        // Respond
         if (value != null) Node.send(out, "VALUE " + value.split("\n").length + '\n' + value);
         else Node.send(out, "NOPE");
     }
 
-    public void handleEcho() {
+    private void handleEcho() {
         Node.send(out, "OHCE");
     }
 
-    public void notifyInfo() {
-        String response = Node.sendNotifyRequest(in, out, info.getName(), info.getAddress());
-        if (!response.equals("NOTIFIED")) disconnectCurrentNode("Unexpected request");
-    }
-
-    public void handleNotify() {
+    private void handleNotify() {
         String nodeName = Node.readNextLine(in);
         String nodeAddress = Node.readNextLine(in);
-        addToNetworkMap(new FullNodeInfo(nodeName, nodeAddress));
+        addToNetworkMap(nodeName, nodeAddress);
         Node.send(out, "NOTIFIED");
     }
 
-    public void handleNearest(String[] parts) {
+    private void handleNearest(String[] parts) {
         if (parts.length == 2) {
             List<FullNodeInfo> nodeInfos = getNearestNodes(parts[1]);
             StringBuilder nodeInfoLines = new StringBuilder();
@@ -197,19 +233,19 @@ public class FullNode implements FullNodeInterface {
         } else disconnectCurrentNode("Unexpected request");
     }
 
-    public void close() {
+    private void close() {
         try {
             in.close();
             out.close();
             serverSocket.close();
-            started = false; // Break
+            communicationStarted = false; // Break
             System.out.println("Communication ended.");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void disconnectCurrentNode(String reason) {
+    private void disconnectCurrentNode(String reason) {
         Node.sendEndRequest(out, reason);
         removeFromNetworkMap(connectedNodeAddress);
         try {
@@ -217,7 +253,7 @@ public class FullNode implements FullNodeInterface {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        started = false;
+        communicationStarted = false;
     }
 
     private List<FullNodeInfo> getNearestNodes(String targetHashID) {
