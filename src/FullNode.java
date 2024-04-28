@@ -55,7 +55,6 @@ public class FullNode implements FullNodeInterface {
 
         // Notify other nodes of address
 //        notifyOtherNodes(startingNodeAddress);
-        notifyCurrentNode(startingNodeAddress);
 
         // Accept client and process requests
         processRequests();
@@ -77,6 +76,7 @@ public class FullNode implements FullNodeInterface {
             initialiseCommunicationStreams(clientSocket);
 
             if (!communicationStarted) handleStart();
+            notifyCurrentNode(null);
             while (communicationStarted) {
                 // Read and split first line of request
                 String request = Node.readNextLine(in);
