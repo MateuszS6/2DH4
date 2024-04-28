@@ -154,13 +154,13 @@ public class FullNode implements FullNodeInterface {
     }
 
     private boolean notifyCurrentNode(String startingNodeAddress) {
-        String nodeAddress = startingNodeAddress.split(":")[0];
-        int port = Integer.parseInt(startingNodeAddress.split(":")[1]);
-        if (startCommunication(nodeAddress, port)) {
+//        String nodeAddress = startingNodeAddress.split(":")[0];
+//        int port = Integer.parseInt(startingNodeAddress.split(":")[1]);
+//        if (startCommunication(nodeAddress, port)) {
             String response = Node.sendNotifyRequest(in, out, info.getName(), info.getAddress());
             return response.equals("NOTIFIED");
-        }
-        return false;
+//        }
+//        return false;
     }
 
     private void handleStart() {
