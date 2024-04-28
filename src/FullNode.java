@@ -53,9 +53,6 @@ public class FullNode implements FullNodeInterface {
         setupNodeInfo(startingNodeName, startingNodeAddress);
         prepareNetworkMap();
 
-        // Notify other nodes of address
-//        notifyOtherNodes(startingNodeAddress);
-
         // Accept client and process requests
         processRequests();
     }
@@ -76,7 +73,7 @@ public class FullNode implements FullNodeInterface {
             initialiseCommunicationStreams(clientSocket);
 
             if (!communicationStarted) handleStart();
-            notifyCurrentNode(null);
+            if (notifyCurrentNode(null)) System.out.println("Notify worked!");;
             while (communicationStarted) {
                 // Read and split first line of request
                 String request = Node.readNextLine(in);
@@ -94,7 +91,7 @@ public class FullNode implements FullNodeInterface {
                 else if (request.startsWith("NOTIFY?") && requestParts.length == 1) handleNotify();
                 else if (request.startsWith("NEAREST?") && requestParts.length == 2) handleNearest(requestParts);
                 else if (request.startsWith("END") && requestParts.length == 2) close();
-                else disconnectCurrentNode("Unexpected request");
+                else disconnectCurrentNode("Unexpected request: " + request);
             }
         } catch (IOException e) {
             System.err.println(e.getMessage());
