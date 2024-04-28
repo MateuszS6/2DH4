@@ -71,24 +71,24 @@ public class TemporaryNode implements TemporaryNodeInterface {
         String response = Node.sendPutRequest(in, out, key, value);
 
         if (response.equals("FAILED")) {
-            List<FullNodeInfo> visitedNodes = new ArrayList<>();
+            List<String> visitedNodeNames = new ArrayList<>();
             System.out.println("Trying " + tryLimit + " nodes until store failed");
             while (response.equals("FAILED")) {
                 List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
                 boolean worked = false;
                 for (FullNodeInfo nodeInfo : nodes) {
-                    if (!visitedNodes.contains(nodeInfo)) {
+                    if (!visitedNodeNames.contains(nodeInfo.getName())) {
                         if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
                             response = Node.sendPutRequest(in, out, key, value);
-                            visitedNodes.add(nodeInfo);
+                            visitedNodeNames.add(nodeInfo.getName());
                             if (response.startsWith("SUCCESS")) worked = true;
                             break;
                         }
-                    } else System.out.println(nodeInfo + " already visited");
+                    } else System.out.println(nodeInfo.getName() + " already visited");
                 }
                 // Exit the loop if the store worked or 30 nodes visited
-                if (worked || visitedNodes.size() > tryLimit) {
-                    if (visitedNodes.size() > tryLimit)
+                if (worked || visitedNodeNames.size() > tryLimit) {
+                    if (visitedNodeNames.size() > tryLimit)
                         System.out.println("Store failed after " + tryLimit + " tries.");
                     break;
                 }
@@ -108,21 +108,23 @@ public class TemporaryNode implements TemporaryNodeInterface {
         // Send a request and check the response
         String response = Node.sendGetRequest(in, out, key);
         if (response.startsWith("NOPE")) {
-            List<FullNodeInfo> visitedNodes = new ArrayList<>();
+            List<String> visitedNodeNames = new ArrayList<>();
             System.out.println("Trying " + tryLimit + " nodes until value not found");
             while (response.startsWith("NOPE")) {
                 List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, HashID.generate(key));
                 boolean found = false;
                 for (FullNodeInfo nodeInfo : nodes)
-                    if (!visitedNodes.contains(nodeInfo)) if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
-                        response = Node.sendGetRequest(in, out, key);
-                        visitedNodes.add(nodeInfo);
-                        if (response.startsWith("VALUE")) found = true;
-                        break;
-                    }
+                    if (!visitedNodeNames.contains(nodeInfo.getName())) {
+                        if (start(nodeInfo.getName(), nodeInfo.getAddress())) {
+                            response = Node.sendGetRequest(in, out, key);
+                            visitedNodeNames.add(nodeInfo.getName());
+                            if (response.startsWith("VALUE")) found = true;
+                            break;
+                        }
+                    } else System.out.println(nodeInfo.getName() + " already visited");
                 // Exit the loop if the value is found or 30 nodes visited
-                if (found || visitedNodes.size() > tryLimit) {
-                    if (visitedNodes.size() > tryLimit)
+                if (found || visitedNodeNames.size() > tryLimit) {
+                    if (visitedNodeNames.size() > tryLimit)
                         System.out.println("Value not found after " + tryLimit + " tries");
                     break;
                 }
