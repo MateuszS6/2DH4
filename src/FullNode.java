@@ -54,7 +54,8 @@ public class FullNode implements FullNodeInterface {
         prepareNetworkMap();
 
         // Notify other nodes of address
-        notifyOtherNodes(startingNodeAddress);
+//        notifyOtherNodes(startingNodeAddress);
+        notifyCurrentNode(startingNodeAddress);
 
         // Accept client and process requests
         processRequests();
@@ -64,7 +65,6 @@ public class FullNode implements FullNodeInterface {
         if (notifyCurrentNode(startingNodeAddress)) {
             List<FullNodeInfo> nodes = Node.sendNearestRequest(in, out, info.getName());
             for (FullNodeInfo node : nodes) notifyCurrentNode(node.getAddress());
-
         }
     }
 
