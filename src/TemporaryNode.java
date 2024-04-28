@@ -84,7 +84,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
                             if (response.startsWith("SUCCESS")) worked = true;
                             break;
                         }
-                    } else System.out.println(nodeInfo.getName() + " already visited");
+                    } else break;
                 }
                 // Exit the loop if the store worked or 30 nodes visited
                 if (worked || visitedNodeNames.size() > tryLimit) {
@@ -121,7 +121,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
                             if (response.startsWith("VALUE")) found = true;
                             break;
                         }
-                    } else System.out.println(nodeInfo.getName() + " already visited");
+                    } else break;
                 // Exit the loop if the value is found or 30 nodes visited
                 if (found || visitedNodeNames.size() > tryLimit) {
                     if (visitedNodeNames.size() > tryLimit)
