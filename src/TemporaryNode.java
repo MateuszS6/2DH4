@@ -84,7 +84,7 @@ public class TemporaryNode implements TemporaryNodeInterface {
                             if (response.startsWith("SUCCESS")) worked = true;
                             break;
                         }
-                    }
+                    } else System.out.println(nodeInfo + " already visited");
                 }
                 // Exit the loop if the store worked or 30 nodes visited
                 if (worked || visitedNodes.size() > tryLimit) {

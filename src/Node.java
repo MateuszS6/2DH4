@@ -41,7 +41,7 @@ public class Node {
     }
 
     public static String sendEchoMessage(BufferedReader in, BufferedWriter out) {
-        send(out, "ECHO");
+        send(out, "ECHO?");
         return readNextLine(in);
     }
 
