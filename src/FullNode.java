@@ -57,39 +57,35 @@ public class FullNode implements FullNodeInterface {
         try {
             clientSocket = serverSocket.accept();
             System.out.println(" --- Client connected!");
-            initialiseCommunicationStreams(clientSocket);
+            initialiseCommunicationStreams();
+
+            // Process requests from connected client
+            if (!communicationStarted) handleStart();
+            while (communicationStarted) {
+                // Read and split first line of request
+                String request = Node.readNextLine(in);
+                if (request == null) {
+                    disconnectCurrentNode(null);
+                    break;
+                } else if (request.isEmpty() || request.isBlank()) handleNoneRequest();
+
+                // Get the parts of the request
+                String[] requestParts = request.split(" ");
+
+                if (request.startsWith("PUT?") && requestParts.length == 3) handlePut(requestParts);
+                else if (request.startsWith("GET?") && requestParts.length == 2) handleGet(requestParts);
+                else if (request.startsWith("ECHO?") && requestParts.length == 1) handleEcho();
+                else if (request.startsWith("NOTIFY?") && requestParts.length == 1) handleNotify();
+                else if (request.startsWith("NEAREST?") && requestParts.length == 2) handleNearest(requestParts);
+                else if (request.startsWith("END") && requestParts.length == 2) close();
+                else disconnectCurrentNode(request);
+            }
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
-
-        // Process requests from connected client
-        processRequests();
     }
 
-    private void processRequests() {
-        if (!communicationStarted) handleStart();
-        while (communicationStarted) {
-            // Read and split first line of request
-            String request = Node.readNextLine(in);
-            if (request == null) {
-                disconnectCurrentNode("Empty line received");
-                break;
-            } else if (request.isEmpty() || request.isBlank()) handleNoneRequest();
-
-            // Get the parts of the request
-            String[] requestParts = request.split(" ");
-
-            if (request.startsWith("PUT?") && requestParts.length == 3) handlePut(requestParts);
-            else if (request.startsWith("GET?") && requestParts.length == 2) handleGet(requestParts);
-            else if (request.startsWith("ECHO?") && requestParts.length == 1) handleEcho();
-            else if (request.startsWith("NOTIFY?") && requestParts.length == 1) handleNotify();
-            else if (request.startsWith("NEAREST?") && requestParts.length == 2) handleNearest(requestParts);
-            else if (request.startsWith("END") && requestParts.length == 2) close();
-            else disconnectCurrentNode("Unexpected request: " + request);
-        }
-    }
-
-    private void initialiseCommunicationStreams(Socket clientSocket) throws IOException {
+    private void initialiseCommunicationStreams() throws IOException {
         in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
     }
@@ -144,7 +140,7 @@ public class FullNode implements FullNodeInterface {
                 communicationStarted = true;
             } else disconnectCurrentNode("Colon must separate the node name and address");
             else disconnectCurrentNode("Request must have three parts");
-        } else disconnectCurrentNode("Unexpected request");
+        } else disconnectCurrentNode(message);
     }
 
     private void handleNoneRequest() {
@@ -194,15 +190,13 @@ public class FullNode implements FullNodeInterface {
     }
 
     private void handleNearest(String[] parts) {
-        if (parts.length == 2) {
-            List<FullNodeInfo> nodeInfos = getNearestNodes(parts[1]);
-            StringBuilder nodeInfoLines = new StringBuilder();
-            for (FullNodeInfo nodeInfo : nodeInfos) {
-                nodeInfoLines.append(nodeInfo.getName()).append('\n');
-                nodeInfoLines.append(nodeInfo.getAddress()).append('\n');
-            }
-            Node.send(out, "NODES " + nodeInfos.size() + '\n' + nodeInfoLines);
-        } else disconnectCurrentNode("Unexpected request");
+        List<FullNodeInfo> nodeInfos = getNearestNodes(parts[1]);
+        StringBuilder nodeInfoLines = new StringBuilder();
+        for (FullNodeInfo nodeInfo : nodeInfos) {
+            nodeInfoLines.append(nodeInfo.getName()).append('\n');
+            nodeInfoLines.append(nodeInfo.getAddress()).append('\n');
+        }
+        Node.send(out, "NODES " + nodeInfos.size() + '\n' + nodeInfoLines);
     }
 
     private void close() {
@@ -218,7 +212,7 @@ public class FullNode implements FullNodeInterface {
     }
 
     private void disconnectCurrentNode(String reason) {
-        Node.sendEndRequest(out, reason);
+        Node.sendEndRequest(out, "Unexpected request: " + reason);
         removeFromNetworkMap(connectedNodeAddress);
         try {
             clientSocket.close();
