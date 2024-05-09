@@ -1,4 +1,4 @@
-# 2D#4: A Dynamic P2P Network Hash Table
+# 2D#4 Program
 
 2D#4 (pronounced "two-dee-hash-four") is a peer-to-peer distributed hash table implementation of the 2D#4 protocol, designed as part of the IN2011 Computer Networks coursework. This project facilitates efficient data storage and retrieval across a decentralized network environment. It includes implementations of both `FullNode` and `TemporaryNode` types, where `FullNode` handles robust data management and network communication, while `TemporaryNode` serves to facilitate temporary data operations and querying within the network. The dynamic nature of this implementation allows for real-time updates and interactions across the distributed network.
 
