@@ -1,3 +1,10 @@
+// IN2011 Computer Networks
+// Coursework 2023/2024
+//
+// Submission by
+// MATEUSZ STEPIEN
+// Store name and address of a node
+
 public class FullNodeInfo {
     private final String name;
     private final String address;

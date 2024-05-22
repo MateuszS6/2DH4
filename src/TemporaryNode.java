@@ -3,24 +3,20 @@
 //
 // Submission by
 // MATEUSZ STEPIEN
-// 220027090
-// Mateusz.Stepien@city.ac.uk
-
 
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-// DO NOT EDIT starts
+// Provided interface
 interface TemporaryNodeInterface {
-    public boolean start(String startingNodeName, String startingNodeAddress);
-    public boolean store(String key, String value);
-    public String get(String key);
+    boolean start(String startingNodeName, String startingNodeAddress);
+    boolean store(String key, String value);
+    String get(String key);
 }
-// DO NOT EDIT ends
 
-
+// Interface implementation
 public class TemporaryNode implements TemporaryNodeInterface {
     private Socket socket;
     private BufferedReader in;

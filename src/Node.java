@@ -1,3 +1,10 @@
+// IN2011 Computer Networks
+// Coursework 2023/2024
+//
+// Submission by
+// MATEUSZ STEPIEN
+// Utility class for nodes
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;

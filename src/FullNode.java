@@ -3,23 +3,19 @@
 //
 // Submission by
 // MATEUSZ STEPIEN
-// 220027090
-// Mateusz.Stepien@city.ac.uk
-
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
-// DO NOT EDIT starts
+// Provided interface
 interface FullNodeInterface {
-    public boolean listen(String ipAddress, int portNumber);
-    public void handleIncomingConnections(String startingNodeName, String startingNodeAddress);
+    boolean listen(String ipAddress, int portNumber);
+    void handleIncomingConnections(String startingNodeName, String startingNodeAddress);
 }
-// DO NOT EDIT ends
 
-
+// Interface implementation
 public class FullNode implements FullNodeInterface {
     private ServerSocket serverSocket;
     private Socket clientSocket;
