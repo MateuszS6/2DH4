@@ -11,7 +11,7 @@
 ## Getting Started
 
 ### Prerequisites
-- Java JDK 11 or higher
+- Java JDK 11 or lower
 - Network access configured to allow TCP/IP communication
 
 ### Building the Project
