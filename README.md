@@ -8,6 +8,18 @@
 - **Institution**: City, University of London
 - **Term**: Spring 2024
 
+## Features
+
+- Node Communication: Supports TCP/IP based communication between nodes.
+- Data Storage and Retrieval: Nodes can store and retrieve key-value pairs.
+- Network Mapping: Implements basic network mapping functionalities.
+
+## Tech Stack
+
+![Java](https://img.shields.io/badge/Java-orange?style=for-the-badge&logo=coffeescript)
+![Wireshark](https://img.shields.io/badge/Wireshark-1679A7?style=for-the-badge&logo=wireshark)
+![Bash](https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white)
+
 ## Getting Started
 
 ### Prerequisites
@@ -47,12 +59,6 @@ For storing data:
 ```bash
 java CmdLineStore <startingNodeName> <startingNodeAddress> <key> <value>
 ```
-
-## Features
-
-- Node Communication: Supports TCP/IP based communication between nodes.
-- Data Storage and Retrieval: Nodes can store and retrieve key-value pairs.
-- Network Mapping: Implements basic network mapping functionalities.
 
 ## Current Status
 
